@@ -1,0 +1,12 @@
+[package]
+name = "ocibuilder"
+version = "0.1.0"
+edition = "2021"
+authors = ["Navid Yaghoobi"]
+license = "MIT"
+readme = "README.md"
+description = "OCI image builder"
+homepage = "https://github.com/navidys/ocibuilder"
+repository = "https://github.com/navidys/ocibuilder"
+
+[dependencies]
