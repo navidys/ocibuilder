@@ -10,3 +10,11 @@ homepage = "https://github.com/navidys/ocibuilder"
 repository = "https://github.com/navidys/ocibuilder"
 
 [dependencies]
+clap = { version = "4.5.18", features = ["derive"] }
+env_logger = "0.11.5"
+fs2 = "0.4.3"
+home = "0.5.9"
+log = "0.4.22"
+oci-spec = "0.7.0"
+thiserror = "1.0.63"
+url = "2.5.2"
