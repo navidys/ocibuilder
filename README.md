@@ -9,3 +9,4 @@ The project is under development and not ready for usage (feel free to contribut
 
 | Command    | Description |
 | ---------- | ----------- |
+| reset      | Reset local storage.
