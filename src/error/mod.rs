@@ -14,4 +14,7 @@ pub enum BuilderError {
 
     #[error("io error {0}: {1}")]
     IoError(PathBuf, io::Error),
+
+    #[error("builder lock error: {0}")]
+    BuilderLockError(io::Error),
 }

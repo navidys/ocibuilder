@@ -18,4 +18,8 @@ impl LayerStore {
 
         Ok(Self { lstore_path })
     }
+
+    pub fn lstore_path(&self) -> &PathBuf {
+        &self.lstore_path
+    }
 }

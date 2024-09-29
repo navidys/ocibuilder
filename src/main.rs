@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
-use ocibuilder::commands::pull;
+use ocibuilder::commands::reset;
 
 #[derive(Parser, Debug)]
 #[clap(version = env!("CARGO_PKG_VERSION"), about)]
@@ -19,7 +19,10 @@ struct Opts {
 #[derive(Subcommand, Debug)]
 enum SubCommand {
     /// Pull an image from specified registry
-    Pull(pull::Pull),
+    // Pull(pull::Pull),
+
+    /// Reset local storage
+    Reset(reset::Reset),
 }
 
 fn main() {
@@ -29,7 +32,7 @@ fn main() {
     let root_dir = opts.root;
 
     let result = match opts.subcmd {
-        SubCommand::Pull(pull) => pull.exec(root_dir),
+        SubCommand::Reset(reset) => reset.exec(root_dir),
     };
 
     match result {

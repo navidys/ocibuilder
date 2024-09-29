@@ -1,3 +1,5 @@
+use fs2::FileExt;
+
 use std::{
     fs::{self, File},
     path::PathBuf,
@@ -6,19 +8,19 @@ use std::{
 use log::debug;
 
 use crate::{
-    container,
+    container::store::ContainerStore,
     error::{BuilderError, BuilderResult},
-    image, layer,
+    image::store::ImageStore,
+    layer::store::LayerStore,
 };
 
 pub struct OCIBuilder {
-    pub image_store: image::store::ImageStore,
-    pub container_store: container::store::ContainerStore,
-    pub layer_store: layer::store::LayerStore,
-
-    lock_file: File,
+    image_store: ImageStore,
+    container_store: ContainerStore,
+    layer_store: LayerStore,
     root_dir: PathBuf,
     tmp_dir: PathBuf,
+    lock_file: File,
 }
 
 impl OCIBuilder {
@@ -43,9 +45,9 @@ impl OCIBuilder {
             Err(err) => return Err(BuilderError::IoError(lfile, err)),
         };
 
-        let image_store = image::store::ImageStore::new(&root_dir)?;
-        let container_store = container::store::ContainerStore::new(&root_dir)?;
-        let layer_store = layer::store::LayerStore::new(&root_dir)?;
+        let image_store = ImageStore::new(&root_dir)?;
+        let container_store = ContainerStore::new(&root_dir)?;
+        let layer_store = LayerStore::new(&root_dir)?;
 
         Ok(Self {
             image_store,
@@ -55,5 +57,31 @@ impl OCIBuilder {
             tmp_dir,
             root_dir,
         })
+    }
+
+    pub fn image_store(&self) -> &ImageStore {
+        &self.image_store
+    }
+
+    pub fn container_store(&self) -> &ContainerStore {
+        &self.container_store
+    }
+
+    pub fn layer_store(&self) -> &LayerStore {
+        &self.layer_store
+    }
+
+    pub fn lock(&self) -> BuilderResult<()> {
+        match self.lock_file.lock_exclusive() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(BuilderError::BuilderLockError(err)),
+        }
+    }
+
+    pub fn unlock(&self) -> BuilderResult<()> {
+        match self.lock_file.unlock() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(BuilderError::BuilderLockError(err)),
+        }
     }
 }

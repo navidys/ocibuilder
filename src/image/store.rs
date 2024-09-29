@@ -18,4 +18,8 @@ impl ImageStore {
 
         Ok(Self { istore_path })
     }
+
+    pub fn istore_path(&self) -> &PathBuf {
+        &self.istore_path
+    }
 }

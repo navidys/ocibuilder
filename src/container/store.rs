@@ -18,4 +18,8 @@ impl ContainerStore {
 
         Ok(Self { cstore_path })
     }
+
+    pub fn cstore_path(&self) -> &PathBuf {
+        &self.cstore_path
+    }
 }
