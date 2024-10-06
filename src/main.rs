@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
-use ocibuilder::commands::reset;
+use ocibuilder::commands::{pull, reset};
 
 #[derive(Parser, Debug)]
 #[clap(version = env!("CARGO_PKG_VERSION"), about)]
@@ -19,20 +19,22 @@ struct Opts {
 #[derive(Subcommand, Debug)]
 enum SubCommand {
     /// Pull an image from specified registry
-    // Pull(pull::Pull),
+    Pull(pull::Pull),
 
     /// Reset local storage
     Reset(reset::Reset),
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     env_logger::builder().format_timestamp(None).init();
 
     let opts = Opts::parse();
     let root_dir = opts.root;
 
     let result = match opts.subcmd {
-        SubCommand::Reset(reset) => reset.exec(root_dir),
+        SubCommand::Pull(pull) => pull.exec(root_dir).await,
+        SubCommand::Reset(reset) => reset.exec(root_dir).await,
     };
 
     match result {
