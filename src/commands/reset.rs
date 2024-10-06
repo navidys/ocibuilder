@@ -17,14 +17,14 @@ impl Reset {
         Self { force }
     }
 
-    pub fn exec(&self, root_dir: Option<OsString>) -> BuilderResult<()> {
+    pub async fn exec(&self, root_dir: Option<OsString>) -> BuilderResult<()> {
         debug!("resetting storage...");
 
         let root_dir_path = utils::get_root_dir(root_dir);
         let builder = builder::oci::OCIBuilder::new(root_dir_path)?;
 
         if self.force {
-            builder.reset()?;
+            builder.reset().await?;
 
             return Ok(());
         }
@@ -38,7 +38,7 @@ impl Reset {
             .expect("Failed to read input");
 
         if user_input.to_lowercase() == "y\n" {
-            builder.reset()?
+            builder.reset().await?
         }
 
         Ok(())

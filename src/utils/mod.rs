@@ -1,3 +1,5 @@
+pub mod digest;
+
 use std::{
     ffi::OsString,
     path::{Path, PathBuf},

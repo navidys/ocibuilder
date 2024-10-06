@@ -15,11 +15,15 @@ impl Pull {
         Self { image_name }
     }
 
-    pub fn exec(&self, root_dir: Option<OsString>) -> BuilderResult<()> {
+    pub async fn exec(&self, root_dir: Option<OsString>) -> BuilderResult<()> {
         debug!("pulling image...");
 
         let root_dir_path = utils::get_root_dir(root_dir);
-        let _builder = builder::oci::OCIBuilder::new(root_dir_path)?;
+        let builder = builder::oci::OCIBuilder::new(root_dir_path)?;
+
+        let img_id = builder.pull(&self.image_name).await?;
+
+        println!("{}", img_id.encoded);
 
         Ok(())
     }
