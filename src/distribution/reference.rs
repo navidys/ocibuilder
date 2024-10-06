@@ -1,0 +1,68 @@
+use crate::{
+    error::{BuilderError, BuilderResult},
+    utils::digest::Digest,
+};
+
+use regex::Regex;
+use std::fmt;
+
+/// Reference of container image stored in the repository
+///
+/// In [OCI distribution spec](https://github.com/opencontainers/distribution-spec/blob/main/spec.md):
+/// > `<reference>` MUST be either (a) the digest of the manifest or (b) a tag
+/// > `<reference>` as a tag MUST be at most 128 characters
+/// > in length and MUST match the following regular expression:
+/// > ```text
+/// > [a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}
+/// > ```
+/// This struct checks this restriction at creation.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Reference(String);
+
+impl std::ops::Deref for Reference {
+    type Target = str;
+    fn deref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for Reference {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+lazy_static::lazy_static! {
+    static ref REF_RE: Regex = Regex::new(r"^[a-zA-Z0-9_][a-zA-Z0-9._-]{0,127}$").unwrap();
+}
+
+impl Reference {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    /// Encode upper letters and `:` to URL encoding, e.g. `A` -> `%41`
+    pub fn encoded(&self) -> String {
+        self.0
+            .chars()
+            .map(|c| {
+                if c.is_ascii_uppercase() || c == ':' {
+                    format!("%{:02X}", c as u8)
+                } else {
+                    c.to_string()
+                }
+            })
+            .collect()
+    }
+
+    pub fn new(name: &str) -> BuilderResult<Self> {
+        if REF_RE.is_match(name) {
+            Ok(Reference(name.to_string()))
+        } else if name.contains(':') {
+            _ = Digest::new(name)?;
+            Ok(Reference(name.to_string()))
+        } else {
+            Err(BuilderError::InvalidImageReference(name.to_string()))
+        }
+    }
+}
