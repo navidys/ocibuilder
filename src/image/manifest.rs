@@ -1,7 +1,4 @@
-use std::{
-    fs::{self, File},
-    path::PathBuf,
-};
+use std::{fs::File, path::PathBuf};
 
 use log::debug;
 use oci_client::manifest::OciImageManifest;
@@ -36,17 +33,6 @@ impl ImageStore {
         }
 
         Ok(())
-    }
-
-    pub fn manifest_size(&self, digest: &digest::Digest) -> BuilderResult<i64> {
-        debug!("get image manifest size: {}", digest);
-
-        let manifest_file = self.manifest_path(digest);
-
-        match fs::metadata(&manifest_file) {
-            Ok(m) => Ok(m.len() as i64),
-            Err(err) => Err(BuilderError::IoError(manifest_file, err)),
-        }
     }
 
     pub fn manifest_path(&self, digest: &digest::Digest) -> PathBuf {

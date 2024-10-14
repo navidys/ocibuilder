@@ -1,3 +1,4 @@
+use log::debug;
 use oci_client::{Client, Reference};
 
 use crate::{
@@ -25,9 +26,23 @@ impl OCIBuilder {
         match client.pull_manifest_and_config(&reference, &auth).await {
             Ok((manifest, digest, config)) => {
                 let image_digest = utils::digest::Digest::new(&digest)?;
+
+                for layer in &manifest.layers {
+                    let mut blob: Vec<u8> = Vec::new();
+                    debug!("pull blob: {}", layer.digest);
+
+                    match client.pull_blob(&reference, &layer, &mut blob).await {
+                        Ok(_) => {
+                            let layer_digest = utils::digest::Digest::new(&layer.digest)?;
+                            self.layer_store().write_blob(&layer_digest, &blob)?;
+                        }
+                        Err(err) => return Err(BuilderError::OciDistError(err)),
+                    }
+                }
+
+                self.image_store().write_config(&image_digest, &config)?;
                 self.image_store()
                     .write_manifest(&image_digest, &manifest)?;
-                self.image_store().write_config(&image_digest, &config)?;
             }
             Err(err) => return Err(BuilderError::OciDistError(err)),
         }
