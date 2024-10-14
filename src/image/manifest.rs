@@ -5,11 +5,10 @@ use std::{
 
 use log::debug;
 use oci_client::manifest::OciImageManifest;
-use oci_spec::image::ImageManifest;
 
 use crate::{
     error::{BuilderError, BuilderResult},
-    utils::{self, digest},
+    utils::digest,
 };
 
 use super::store::ImageStore;
@@ -26,14 +25,6 @@ impl ImageStore {
 
         debug!("write manifest: {:?}", manifest_file_path);
 
-        let mut image_manifest_dir = self.istore_path().clone();
-        image_manifest_dir.push(digest.encoded.to_string());
-
-        match fs::create_dir_all(&image_manifest_dir) {
-            Ok(_) => {}
-            Err(err) => return Err(BuilderError::IoError(image_manifest_dir, err)),
-        }
-
         let manifest_file = match File::create(&manifest_file_path) {
             Ok(f) => f,
             Err(err) => return Err(BuilderError::IoError(manifest_file_path, err)),
@@ -45,24 +36,6 @@ impl ImageStore {
         }
 
         Ok(())
-    }
-
-    pub fn get_manifest(&self, image_id: &str) -> BuilderResult<ImageManifest> {
-        let images = self.images()?;
-
-        for img in images {
-            if img.id() == image_id {
-                let img_digest = utils::digest::Digest::new(image_id)?;
-                let manifest_file = self.manifest_path(&img_digest);
-
-                match ImageManifest::from_file(manifest_file) {
-                    Ok(manifest) => return Ok(manifest),
-                    Err(err) => return Err(BuilderError::OciSpecError(err)),
-                }
-            }
-        }
-
-        Err(BuilderError::ImageNotFound(image_id.to_string()))
     }
 
     pub fn manifest_size(&self, digest: &digest::Digest) -> BuilderResult<i64> {
@@ -78,7 +51,7 @@ impl ImageStore {
 
     pub fn manifest_path(&self, digest: &digest::Digest) -> PathBuf {
         let mut manifest_file = self.istore_path().clone();
-        manifest_file.push(digest.encoded.to_string());
+        manifest_file.push(&digest.encoded);
         manifest_file.push(MANIFEST_FILENAME);
 
         manifest_file

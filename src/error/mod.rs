@@ -1,7 +1,6 @@
 use std::{io, path::PathBuf};
 
 use oci_client::{errors::OciDistributionError, ParseError};
-use oci_spec::OciSpecError;
 use thiserror::Error;
 
 pub type BuilderResult<T> = std::result::Result<T, BuilderError>;
@@ -16,9 +15,6 @@ pub enum BuilderError {
 
     #[error("json error: {0}")]
     SerdeJsonError(serde_json::Error),
-
-    #[error("oci spec error: {0}")]
-    OciSpecError(OciSpecError),
 
     #[error("oci distribution error: {0}")]
     OciDistError(OciDistributionError),

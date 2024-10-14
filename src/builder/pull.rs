@@ -23,10 +23,11 @@ impl OCIBuilder {
         println!("Trying pull image {}...", reference);
 
         match client.pull_manifest_and_config(&reference, &auth).await {
-            Ok((manifest, digest, _config)) => {
+            Ok((manifest, digest, config)) => {
                 let image_digest = utils::digest::Digest::new(&digest)?;
                 self.image_store()
                     .write_manifest(&image_digest, &manifest)?;
+                self.image_store().write_config(&image_digest, &config)?;
             }
             Err(err) => return Err(BuilderError::OciDistError(err)),
         }
