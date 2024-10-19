@@ -5,7 +5,7 @@ use crate::error::{BuilderError, BuilderResult};
 use super::oci::OCIBuilder;
 
 impl OCIBuilder {
-    pub fn reset(&self) -> BuilderResult<()> {
+    pub async fn reset(&self) -> BuilderResult<()> {
         self.lock()?;
 
         // remove image store directory content
@@ -27,6 +27,13 @@ impl OCIBuilder {
         match fs::remove_dir_all(lstore_path) {
             Ok(_) => {}
             Err(err) => return Err(BuilderError::IoError(lstore_path.clone(), err)),
+        }
+
+        // remove overlay content
+        let overlay_path = self.layer_store().overlay_path();
+        match fs::remove_dir_all(overlay_path) {
+            Ok(_) => {}
+            Err(err) => return Err(BuilderError::IoError(overlay_path.clone(), err)),
         }
 
         self.unlock()?;

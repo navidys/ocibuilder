@@ -9,4 +9,6 @@ The project is under development and not ready for usage (feel free to contribut
 
 | Command    | Description |
 | ---------- | ----------- |
+| images     | List images in local storage.
+| pull       | Pull an image from the specified registry.
 | reset      | Reset local storage.
