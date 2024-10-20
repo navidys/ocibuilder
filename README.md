@@ -9,6 +9,7 @@ The project is under development and not ready for usage (feel free to contribut
 
 | Command    | Description |
 | ---------- | ----------- |
+| containers | List the working containers and their base images.
 | from       | Creates a new working container either from scratch or using an image.
 | images     | List images in local storage.
 | pull       | Pull an image from the specified registry.
