@@ -13,6 +13,9 @@ pub enum BuilderError {
     #[error("io error {0}: {1}")]
     IoError(PathBuf, io::Error),
 
+    #[error("walkdir error {0}: {1}")]
+    WalkDirError(PathBuf, walkdir::Error),
+
     #[error("json error: {0}")]
     SerdeJsonError(serde_json::Error),
 
