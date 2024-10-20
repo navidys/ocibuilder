@@ -9,7 +9,7 @@ use crate::error::{BuilderError, BuilderResult};
 use super::oci::OCIBuilder;
 
 impl OCIBuilder {
-    pub async fn reset(&self) -> BuilderResult<()> {
+    pub fn reset(&self) -> BuilderResult<()> {
         self.lock()?;
 
         // remove image store directory content
