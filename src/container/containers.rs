@@ -3,7 +3,10 @@ use std::{fs::File, path::PathBuf};
 use log::debug;
 use serde::{Deserialize, Serialize};
 
-use crate::error::{BuilderError, BuilderResult};
+use crate::{
+    error::{BuilderError, BuilderResult},
+    utils::digest,
+};
 
 use super::store::ContainerStore;
 
@@ -123,6 +126,20 @@ impl ContainerStore {
         }
 
         Ok(())
+    }
+
+    pub fn container_digest(&self, name_or_id: &str) -> BuilderResult<digest::Digest> {
+        let cnt_list = self.containers()?;
+
+        for cnt in cnt_list {
+            let input_id = name_or_id.to_string();
+
+            if cnt.name == input_id || (input_id.len() >= 12 && cnt.id[..12] == input_id[..12]) {
+                return digest::Digest::new(&format!("sha256:{}", cnt.id));
+            }
+        }
+
+        Err(BuilderError::ContainerNotFound(name_or_id.to_string()))
     }
 
     pub fn containers_path(&self) -> PathBuf {

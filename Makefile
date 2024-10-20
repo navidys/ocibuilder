@@ -40,7 +40,7 @@ else
 endif
 
 .PHONY: all
-all: build
+all: binary
 
 bin:
 	mkdir -p $@
