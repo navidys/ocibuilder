@@ -19,13 +19,13 @@ pub enum BuilderError {
     #[error("json error: {0}")]
     SerdeJsonError(serde_json::Error),
 
-    #[error("builder lock error: {0}")]
-    BuilderLockError(io::Error),
-
     #[error("archive error: {0}")]
     ArchiveError(String),
 
     // general builder errors
+    #[error("builder lock error: {0}")]
+    BuilderLockError(io::Error),
+
     #[error("oci distribution error: {0}")]
     OciDistError(OciDistributionError),
 
@@ -35,12 +35,19 @@ pub enum BuilderError {
     #[error("invalid digest: {0}")]
     InvalidDigest(String),
 
+    // container store errors
+    #[error("container store error: {0}")]
+    ContainerStoreError(String),
+
     // image store errors
     #[error("image store error: {0}")]
     ImageStoreError(String),
 
     #[error("image not found: {0}")]
     ImageNotFound(String),
+
+    #[error("image manifest not found: {0}")]
+    ImageManifestNotFound(String),
 
     #[error("invalid image name {0}: {1}")]
     InvalidImageName(String, ParseError),

@@ -66,15 +66,31 @@ impl ImageStore {
 
         for img in images {
             let input_id = name_or_id.to_string();
-            if img.repository() == input_id
-                || (input_id.len() >= 12 && img.id[..12] == input_id[..12])
-            {
+            let img_name = format!("{}:{}", img.repository, img.tag);
+            if img_name == input_id || (input_id.len() >= 12 && img.id[..12] == input_id[..12]) {
                 let img_digest = digest::Digest::new(&format!("sha256:{}", img.id))?;
                 return Ok(img_digest);
             }
         }
 
         Err(BuilderError::ImageNotFound(name_or_id.to_string()))
+    }
+
+    pub fn image_reference(&self, img_digest: &digest::Digest) -> BuilderResult<Reference> {
+        let images = self.images()?;
+
+        for img in images {
+            if img.id == img_digest.encoded {
+                let reference: Reference = match img.repository.parse() {
+                    Ok(img_ref) => img_ref,
+                    Err(err) => return Err(BuilderError::InvalidImageName(img.repository, err)),
+                };
+
+                return Ok(reference);
+            }
+        }
+
+        Err(BuilderError::ImageNotFound(img_digest.to_string()))
     }
 
     pub fn write_images(&self, img_ref: &Reference, dg: &digest::Digest) -> BuilderResult<()> {

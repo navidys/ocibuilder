@@ -35,6 +35,29 @@ impl ImageStore {
         Ok(())
     }
 
+    pub fn get_manifest(&self, image_id: &digest::Digest) -> BuilderResult<OciImageManifest> {
+        let images = self.images()?;
+
+        for img in images {
+            if img.id() == image_id.encoded {
+                let manifest_file_path = self.manifest_path(image_id);
+                let manifest_file = match File::open(&manifest_file_path) {
+                    Ok(f) => f,
+                    Err(err) => return Err(BuilderError::IoError(manifest_file_path, err)),
+                };
+
+                let img_manifest: OciImageManifest = match serde_json::from_reader(manifest_file) {
+                    Ok(m) => m,
+                    Err(err) => return Err(BuilderError::SerdeJsonError(err)),
+                };
+
+                return Ok(img_manifest);
+            }
+        }
+
+        Err(BuilderError::ImageManifestNotFound(image_id.to_string()))
+    }
+
     pub fn manifest_path(&self, digest: &digest::Digest) -> PathBuf {
         let mut manifest_file = self.istore_path().clone();
         manifest_file.push(&digest.encoded);

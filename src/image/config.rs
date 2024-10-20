@@ -1,6 +1,10 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs::{self, File},
+    path::PathBuf,
+};
 
 use log::debug;
+use oci_client::config::ConfigFile;
 
 use crate::{
     error::{BuilderError, BuilderResult},
@@ -31,6 +35,24 @@ impl ImageStore {
                 err,
             ))),
         }
+    }
+
+    pub fn get_config(&self, digest: &digest::Digest) -> BuilderResult<ConfigFile> {
+        debug!("get image config: {}", digest);
+
+        let config_file_path = self.config_path(digest);
+
+        let config_file = match File::open(&config_file_path) {
+            Ok(f) => f,
+            Err(err) => return Err(BuilderError::IoError(config_file_path, err)),
+        };
+
+        let img_config: ConfigFile = match serde_json::from_reader(config_file) {
+            Ok(m) => m,
+            Err(err) => return Err(BuilderError::SerdeJsonError(err)),
+        };
+
+        Ok(img_config)
     }
 
     pub fn config_path(&self, digest: &digest::Digest) -> PathBuf {
