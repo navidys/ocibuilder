@@ -1,4 +1,5 @@
 use log::debug;
+use oci_client::config::ConfigFile;
 
 use crate::{error::BuilderResult, utils};
 
@@ -77,13 +78,16 @@ impl OCIBuilder {
                 }
             }
 
-            self.container_store().create(
+            let cnt_id = self.container_store().create(
                 &cnt_name,
                 "scratch",
                 "",
                 &layer_digest.encoded,
                 &Vec::new(),
             )?;
+
+            let scratch_cfg = ConfigFile::default();
+            self.container_store().write_config(&cnt_id, &scratch_cfg)?;
         }
 
         self.unlock()?;

@@ -39,6 +39,9 @@ pub enum BuilderError {
     #[error("container store error: {0}")]
     ContainerStoreError(String),
 
+    #[error("container not found: {0}")]
+    ContainerNotFound(String),
+
     // image store errors
     #[error("image store error: {0}")]
     ImageStoreError(String),
