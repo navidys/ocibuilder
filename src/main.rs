@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
-use ocibuilder::commands::{config, containers, from, images, mount, pull, reset};
+use ocibuilder::commands::{config, containers, from, images, mount, pull, reset, umount};
 
 #[derive(Parser, Debug)]
 #[clap(version = env!("CARGO_PKG_VERSION"), about)]
@@ -38,6 +38,9 @@ enum SubCommand {
 
     /// Mounts a working container's root filesystem for manipulation
     Mount(mount::Mount),
+
+    /// Unmounts the root file system of the specified working containers
+    Umount(umount::Umount),
 }
 
 #[tokio::main]
@@ -55,6 +58,7 @@ async fn main() {
         SubCommand::Pull(pull) => pull.exec(root_dir).await,
         SubCommand::Reset(reset) => reset.exec(root_dir),
         SubCommand::Mount(mount) => mount.exec(root_dir),
+        SubCommand::Umount(umount) => umount.exec(root_dir),
     };
 
     match result {

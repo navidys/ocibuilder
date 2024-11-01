@@ -142,6 +142,19 @@ impl ContainerStore {
         Err(BuilderError::ContainerNotFound(name_or_id.to_string()))
     }
 
+    pub fn container_exist(&self, name_or_id: &str) -> BuilderResult<Container> {
+        let cnt_id = self.container_digest(name_or_id)?;
+        let cnt_list = self.containers()?;
+
+        for cnt in cnt_list {
+            if cnt_id.encoded == cnt.id {
+                return Ok(cnt);
+            }
+        }
+
+        Err(BuilderError::ContainerNotFound(name_or_id.to_string()))
+    }
+
     pub fn containers_path(&self) -> PathBuf {
         let mut containers_file = self.cstore_path().clone();
         containers_file.push(CONTAINERS_FILENAME);
