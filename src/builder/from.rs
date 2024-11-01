@@ -11,7 +11,16 @@ impl OCIBuilder {
         let mut cnt_name = name.unwrap_or_default();
 
         if img_name != "scratch" {
-            let img_digest = self.pull(img_name, &false).await?;
+            let img_exist_digest = match self.image_store().image_digest(img_name) {
+                Ok(dg) => Some(dg),
+                Err(_) => None,
+            };
+
+            let img_digest = match img_exist_digest {
+                Some(dg) => dg,
+                None => self.pull(img_name, &false).await?,
+            };
+
             debug!("container from image: {}", img_digest);
 
             let img_info = self.image_store().image_reference(&img_digest)?;
