@@ -25,5 +25,7 @@ ocibuilder config --port 4444/tcp $ctr1
 | containers | List the working containers and their base images.
 | from       | Creates a new working container either from scratch or using an image.
 | images     | List images in local storage.
+| mount      | Mounts a working container's root filesystem for manipulation.
+| umount     | Unmounts the root file system of the specified working containers.
 | pull       | Pull an image from the specified registry.
 | reset      | Reset local storage.

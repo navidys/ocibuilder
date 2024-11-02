@@ -35,6 +35,12 @@ pub enum BuilderError {
     #[error("invalid digest: {0}")]
     InvalidDigest(String),
 
+    #[error("mount/umount error: {0}")]
+    MountUmountError(String),
+
+    #[error("cannot mount using driver overlay in rootless mode.")]
+    MountRootlessError(),
+
     // container store errors
     #[error("container store error: {0}")]
     ContainerStoreError(String),
