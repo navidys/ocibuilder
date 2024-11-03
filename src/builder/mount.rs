@@ -3,6 +3,7 @@ use std::{
     fs::File,
     io::{BufRead, BufReader},
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use log::debug;
@@ -16,10 +17,6 @@ use super::oci::OCIBuilder;
 
 impl OCIBuilder {
     pub fn mount(&self, container: &str) -> BuilderResult<PathBuf> {
-        if nix::unistd::geteuid().as_raw() != 0 {
-            return Err(BuilderError::MountRootlessError());
-        }
-
         self.lock()?;
 
         let cnt: crate::container::containers::Container =
@@ -73,15 +70,10 @@ impl OCIBuilder {
             mount_options
         );
 
-        match nix::mount::mount(
-            Some(CStr::from_bytes_with_nul(b"overlay\0").unwrap()),
-            mount_point.display().to_string().as_bytes(),
-            Some(CStr::from_bytes_with_nul(b"overlay\0").unwrap()),
-            nix::mount::MsFlags::empty(),
-            Some(mount_options.as_bytes()),
-        ) {
-            Ok(_) => {}
-            Err(err) => return Err(BuilderError::MountUmountError(err.to_string())),
+        if nix::unistd::geteuid().as_raw() != 0 {
+            mount_rootless(&mount_point, lowerdir_paths, &upperdir_path, &workdir_path)?
+        } else {
+            mount(&mount_point, &mount_options)?;
         }
 
         self.unlock()?;
@@ -103,9 +95,10 @@ impl OCIBuilder {
                 mount_point
             );
 
-            match nix::mount::umount(mount_point.display().to_string().as_bytes()) {
-                Ok(_) => {}
-                Err(err) => return Err(BuilderError::MountUmountError(err.to_string())),
+            if nix::unistd::geteuid().as_raw() != 0 {
+                umount_rootless(&mount_point)?;
+            } else {
+                umount(&mount_point)?;
             }
         }
 
@@ -137,4 +130,84 @@ fn is_mounted(source: &Path) -> BuilderResult<bool> {
     }
 
     Ok(false)
+}
+
+fn mount(mount_point: &Path, mount_options: &str) -> BuilderResult<()> {
+    match nix::mount::mount(
+        Some(CStr::from_bytes_with_nul(b"overlay\0").unwrap()),
+        mount_point.display().to_string().as_bytes(),
+        Some(CStr::from_bytes_with_nul(b"overlay\0").unwrap()),
+        nix::mount::MsFlags::empty(),
+        Some(mount_options.as_bytes()),
+    ) {
+        Ok(_) => Ok(()),
+        Err(err) => Err(BuilderError::MountUmountError(err.to_string())),
+    }
+}
+
+fn umount(mount_point: &Path) -> BuilderResult<()> {
+    match nix::mount::umount(mount_point.display().to_string().as_bytes()) {
+        Ok(_) => Ok(()),
+        Err(err) => Err(BuilderError::MountUmountError(err.to_string())),
+    }
+}
+
+fn mount_rootless(
+    mount_point: &Path,
+    lower_dir: Vec<String>,
+    upper_dir: &Path,
+    work_dir: &Path,
+) -> BuilderResult<()> {
+    let mut cmd_options = String::new();
+    for ldir in lower_dir {
+        if cmd_options.is_empty() {
+            cmd_options = format!("lowerdir={}", ldir)
+        } else {
+            cmd_options = format!("{}:{}", cmd_options, ldir)
+        }
+    }
+
+    cmd_options = format!(
+        "{},upperdir={},workdir={}",
+        cmd_options,
+        upper_dir.display(),
+        work_dir.display(),
+    );
+
+    match Command::new("/usr/bin/fuse-overlayfs")
+        .arg("-o")
+        .arg(cmd_options)
+        .arg(mount_point.display().to_string())
+        .output()
+    {
+        Ok(output) => {
+            if !output.stderr.is_empty() {
+                return Err(BuilderError::MountUmountError(
+                    String::from_utf8(output.stderr).unwrap_or_default(),
+                ));
+            }
+
+            Ok(())
+        }
+        Err(err) => Err(BuilderError::MountUmountError(err.to_string())),
+    }
+}
+
+fn umount_rootless(mount_point: &Path) -> BuilderResult<()> {
+    match Command::new("/usr/bin/fusermount")
+        .arg("-u")
+        .arg(mount_point.display().to_string())
+        .output()
+    {
+        Ok(output) => {
+            if !output.stderr.is_empty() {
+                return Err(BuilderError::MountUmountError(
+                    String::from_utf8(output.stderr).unwrap_or_default(),
+                ));
+            }
+
+            Ok(())
+        }
+        Err(err) => Err(BuilderError::MountUmountError(err.to_string())),
+    }
 }
