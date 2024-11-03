@@ -19,8 +19,7 @@ impl OCIBuilder {
     pub fn mount(&self, container: &str) -> BuilderResult<PathBuf> {
         self.lock()?;
 
-        let cnt: crate::container::containers::Container =
-            self.container_store().container_exist(container)?;
+        let cnt = self.container_store().container_exist(container)?;
 
         let top_layer = cnt.top_layer();
         let top_layer_digest = utils::digest::Digest::new(&format!("sha256:{}", top_layer))?;

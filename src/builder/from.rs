@@ -1,7 +1,7 @@
 use log::debug;
-use oci_client::config::ConfigFile;
+use oci_client::config::{ConfigFile, History};
 
-use crate::{error::BuilderResult, utils};
+use crate::{error::BuilderResult, image::images, utils};
 
 use super::oci::OCIBuilder;
 
@@ -10,7 +10,7 @@ impl OCIBuilder {
         self.lock()?;
         let mut cnt_name = name.unwrap_or_default();
 
-        if img_name != "scratch" {
+        if img_name != images::SCRATCH_IMAGE_NAME {
             let img_exist_digest = match self.image_store().image_digest(img_name) {
                 Ok(dg) => Some(dg),
                 Err(_) => None,
@@ -95,7 +95,18 @@ impl OCIBuilder {
                 &Vec::new(),
             )?;
 
-            let scratch_cfg = ConfigFile::default();
+            let mut scratch_cfg = ConfigFile::default();
+            let change_history = History {
+                created: Some(chrono::Utc::now()),
+                author: None,
+                created_by: None,
+                comment: None,
+                empty_layer: None,
+            };
+            let mut img_history: Vec<History> = Vec::new();
+            img_history.insert(0, change_history);
+            scratch_cfg.history = Some(img_history);
+
             self.container_store().write_config(&cnt_id, &scratch_cfg)?;
         }
 

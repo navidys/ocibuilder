@@ -18,8 +18,7 @@ pub struct OCIBuilder {
     image_store: ImageStore,
     container_store: ContainerStore,
     layer_store: LayerStore,
-    _root_dir: PathBuf,
-    _tmp_dir: PathBuf,
+    tmp_dir: PathBuf,
     lock_file: File,
 }
 
@@ -54,8 +53,7 @@ impl OCIBuilder {
             container_store,
             layer_store,
             lock_file,
-            _tmp_dir: tmp_dir,
-            _root_dir: root_dir,
+            tmp_dir,
         })
     }
 
@@ -69,6 +67,10 @@ impl OCIBuilder {
 
     pub fn layer_store(&self) -> &LayerStore {
         &self.layer_store
+    }
+
+    pub fn tmp_dir(&self) -> &PathBuf {
+        &self.tmp_dir
     }
 
     pub fn lock(&self) -> BuilderResult<()> {

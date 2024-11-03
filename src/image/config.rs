@@ -62,4 +62,11 @@ impl ImageStore {
 
         cpath
     }
+
+    pub fn config_path_dir(&self, digest: &digest::Digest) -> PathBuf {
+        let mut cpath = self.istore_path().clone();
+        cpath.push(&digest.encoded);
+
+        cpath
+    }
 }

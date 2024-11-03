@@ -8,6 +8,11 @@ The project is under development and not ready for usage (feel free to contribut
 * fuse
 * fuse-overlayfs
 
+## Limitations
+
+* sha384 and sha512 digests are not supported
+* Build from Containerfile/Dockerfile is not supported
+
 ## Build binary
 
 ```shell
@@ -26,6 +31,7 @@ ocibuilder config --port 4444/tcp $ctr1
 
 | Command    | Description |
 | ---------- | ----------- |
+| commit     | Creates an image from a working container.
 | config     | Update image configuration settings.
 | containers | List the working containers and their base images.
 | from       | Creates a new working container either from scratch or using an image.

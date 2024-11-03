@@ -41,14 +41,17 @@ impl Images {
         let mut output = "REPOSITORY\tTAG\tIMAGE ID\n".to_string();
 
         for img in images {
-            let img_ref = format!("{}:{}", img.repository(), img.tag());
-            let reference: Reference = match img_ref.parse() {
-                Ok(img_ref) => img_ref,
-                Err(err) => return Err(BuilderError::InvalidImageName(img_ref, err)),
-            };
-
-            let img_name = format!("{}/{}", reference.registry(), reference.repository());
-            output = format!("{}{}\t{}\t{:.12}\n", output, img_name, img.tag(), img.id());
+            if img.repository() == "/" && img.tag().is_empty() {
+                output = format!("{}<none>\t<none>\t{:.12}\n", output, img.id());
+            } else {
+                let img_ref = format!("{}:{}", img.repository(), img.tag());
+                let reference: Reference = match img_ref.parse() {
+                    Ok(img_ref) => img_ref,
+                    Err(err) => return Err(BuilderError::InvalidImageName(img_ref, err)),
+                };
+                let img_name = format!("{}/{}", reference.registry(), reference.repository());
+                output = format!("{}{}\t{}\t{:.12}\n", output, img_name, img.tag(), img.id());
+            }
         }
 
         match write!(&mut tw, "{}", output) {

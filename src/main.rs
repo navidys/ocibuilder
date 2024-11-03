@@ -1,7 +1,7 @@
 use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
-use ocibuilder::commands::{config, containers, from, images, mount, pull, reset, umount};
+use ocibuilder::commands::{commit, config, containers, from, images, mount, pull, reset, umount};
 
 #[derive(Parser, Debug)]
 #[clap(version = env!("CARGO_PKG_VERSION"), about)]
@@ -18,6 +18,9 @@ struct Opts {
 #[allow(clippy::large_enum_variant)]
 #[derive(Subcommand, Debug)]
 enum SubCommand {
+    /// Create an image from a working container
+    Commit(commit::Commit),
+
     /// Modifies the configuration values which will be saved to the image.
     Config(config::Config),
 
@@ -51,6 +54,7 @@ async fn main() {
     let root_dir = opts.root;
 
     let result = match opts.subcmd {
+        SubCommand::Commit(commit) => commit.exec(root_dir),
         SubCommand::Config(config) => config.exec(root_dir),
         SubCommand::From(from) => from.exec(root_dir).await,
         SubCommand::Images(images) => images.exec(root_dir),
