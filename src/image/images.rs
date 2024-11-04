@@ -12,6 +12,7 @@ use crate::{
 use super::store::ImageStore;
 
 const IMAGES_FILENAME: &str = "images.json";
+pub const SCRATCH_IMAGE_NAME: &str = "scratch";
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Image {

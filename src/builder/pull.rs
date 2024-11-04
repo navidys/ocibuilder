@@ -35,13 +35,13 @@ impl OCIBuilder {
 
         println!("Trying pull image {}...", reference);
 
-        let (manifest, digest, config) =
+        let (manifest, _digest, config) =
             match client.pull_manifest_and_config(&reference, &auth).await {
                 Ok((manifest, digest, config)) => (manifest, digest, config),
                 Err(err) => return Err(BuilderError::OciDistError(err)),
             };
 
-        let image_digest = utils::digest::Digest::new(&digest)?;
+        let image_digest = utils::digest::Digest::new(&manifest.config.digest)?;
 
         for layer in &manifest.layers {
             let mut blob: Vec<u8> = Vec::new();
@@ -79,7 +79,7 @@ impl OCIBuilder {
         self.image_store().write_config(&image_digest, &config)?;
 
         // write image manifest
-        println!("Writing image manifest");
+        println!("Writing manifest to image destination");
         self.image_store()
             .write_manifest(&image_digest, &manifest)?;
 

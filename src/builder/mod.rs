@@ -1,3 +1,4 @@
+pub mod commit;
 pub mod config;
 pub mod dist_client;
 pub mod from;
