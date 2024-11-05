@@ -1,6 +1,7 @@
 use std::{io, path::PathBuf};
 
 use oci_client::{errors::OciDistributionError, ParseError};
+use oci_spec::OciSpecError;
 use thiserror::Error;
 
 pub type BuilderResult<T> = std::result::Result<T, BuilderError>;
@@ -38,6 +39,10 @@ pub enum BuilderError {
     #[error("mount/umount error: {0}")]
     MountUmountError(String),
 
+    // OCI spec errors
+    #[error("oci spec error: {0}")]
+    OciSpecError(OciSpecError),
+
     // container store errors
     #[error("container store error: {0}")]
     ContainerStoreError(String),
@@ -60,6 +65,9 @@ pub enum BuilderError {
 
     #[error("invalid image reference: {0}")]
     InvalidImageReference(String),
+
+    #[error("image archive file exists: {0}")]
+    ImageArchiveExits(PathBuf),
 
     // layers store error
     #[error("layer store error: {0}")]

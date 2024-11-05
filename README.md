@@ -40,3 +40,4 @@ ocibuilder config --port 4444/tcp $ctr1
 | umount     | Unmounts the root file system of the specified working containers.
 | pull       | Pull an image from the specified registry.
 | reset      | Reset local storage.
+| save       | Save an image to oci-archive tarball.

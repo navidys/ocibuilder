@@ -988,6 +988,7 @@ dependencies = [
  "log",
  "nix",
  "oci-client",
+ "oci-spec",
  "rand",
  "regex",
  "serde",

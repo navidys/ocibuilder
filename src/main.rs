@@ -1,7 +1,9 @@
 use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
-use ocibuilder::commands::{commit, config, containers, from, images, mount, pull, reset, umount};
+use ocibuilder::commands::{
+    commit, config, containers, from, images, mount, pull, reset, save, umount,
+};
 
 #[derive(Parser, Debug)]
 #[clap(version = env!("CARGO_PKG_VERSION"), about)]
@@ -39,6 +41,9 @@ enum SubCommand {
     /// Reset local storage
     Reset(reset::Reset),
 
+    /// Save an image to oci-archive
+    Save(save::Save),
+
     /// Mounts a working container's root filesystem for manipulation
     Mount(mount::Mount),
 
@@ -61,6 +66,7 @@ async fn main() {
         SubCommand::Containers(containers) => containers.exec(root_dir),
         SubCommand::Pull(pull) => pull.exec(root_dir).await,
         SubCommand::Reset(reset) => reset.exec(root_dir),
+        SubCommand::Save(save) => save.exec(root_dir),
         SubCommand::Mount(mount) => mount.exec(root_dir),
         SubCommand::Umount(umount) => umount.exec(root_dir),
     };
