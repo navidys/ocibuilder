@@ -134,15 +134,14 @@ impl OCIBuilder {
         let manifest_digest = utils::digest::Digest::new(&manifest_digest_str)?;
         let manifest_size = utils::file_size(manifest_path)?;
 
-        let image_ref = self.image_store().image_reference(img_digest)?;
-        let image_tag = image_ref.tag().unwrap_or_default();
+        let image = self.image_store().image(img_digest)?;
         let mut index_annotations: BTreeMap<String, String> = BTreeMap::new();
         let mut index_annotations_opt: Option<BTreeMap<String, String>> = None;
 
-        if !image_tag.is_empty() && image_tag != "latest" {
+        if !image.tag().is_empty() && image.tag() != "latest" {
             index_annotations.insert(
                 annotations::ORG_OPENCONTAINERS_IMAGE_REF_NAME.to_string(),
-                image_tag.to_string(),
+                image.tag(),
             );
             index_annotations_opt = Some(index_annotations);
         }

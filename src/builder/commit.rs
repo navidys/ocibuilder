@@ -45,9 +45,8 @@ impl OCIBuilder {
         let layer_tar_gz_digest =
             self.compress_layer_archive(&layer_archive_path, &tmp_gz_output)?;
 
-        let cnt_image_id = utils::digest::Digest::new(&format!("sha256:{}", cnt.image_id()))?;
-
         if cnt.image_name() != images::SCRATCH_IMAGE_NAME {
+            let cnt_image_id = utils::digest::Digest::new(&format!("sha256:{}", cnt.image_id()))?;
             let img_manifest = self.image_store().get_manifest(&cnt_image_id)?;
 
             for blob in img_manifest.layers {
