@@ -62,6 +62,18 @@ impl ImageStore {
         Ok(images)
     }
 
+    pub fn image(&self, img_digest: &digest::Digest) -> BuilderResult<Image> {
+        let images = self.images()?;
+
+        for img in images {
+            if img.id == img_digest.encoded {
+                return Ok(img);
+            }
+        }
+
+        Err(BuilderError::ImageNotFound(img_digest.to_string()))
+    }
+
     pub fn image_digest(&self, name_or_id: &str) -> BuilderResult<digest::Digest> {
         let images = self.images()?;
 
