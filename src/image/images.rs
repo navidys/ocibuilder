@@ -67,7 +67,7 @@ impl ImageStore {
 
         for img in images {
             let input_id = name_or_id.to_string();
-            let img_name = format!("{}:{}", img.repository, img.tag);
+            let img_name: String = format!("{}:{}", img.repository, img.tag);
             if img_name == input_id || (input_id.len() >= 12 && img.id[..12] == input_id[..12]) {
                 let img_digest = digest::Digest::new(&format!("sha256:{}", img.id))?;
                 return Ok(img_digest);
@@ -82,7 +82,8 @@ impl ImageStore {
 
         for img in images {
             if img.id == img_digest.encoded {
-                let reference: Reference = match img.repository.parse() {
+                let image_name = format!("{}:{}", img.repository, img.tag);
+                let reference: Reference = match image_name.parse() {
                     Ok(img_ref) => img_ref,
                     Err(err) => return Err(BuilderError::InvalidImageName(img.repository, err)),
                 };

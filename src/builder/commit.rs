@@ -128,6 +128,10 @@ impl OCIBuilder {
             .write_images(&new_image_reference, &new_image_id_digest)?;
 
         // remove tmp content
+        match fs::remove_file(&layer_archive_path) {
+            Ok(_) => {}
+            Err(err) => return Err(BuilderError::IoError(layer_archive_path, err)),
+        }
 
         self.unlock()?;
 
