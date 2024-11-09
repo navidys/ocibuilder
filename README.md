@@ -10,8 +10,8 @@ The project is under development and not ready for usage (feel free to contribut
 
 ## Limitations
 
-* sha384 and sha512 digests are not supported
-* Build from Containerfile/Dockerfile is not supported
+* sha384 and sha512 digests are not yet supported
+* Build from Containerfile/Dockerfile is not yet supported
 
 ## Build binary
 
@@ -40,4 +40,9 @@ ocibuilder config --port 4444/tcp $ctr1
 | umount     | Unmounts the root file system of the specified working containers.
 | pull       | Pull an image from the specified registry.
 | reset      | Reset local storage.
+| rm         | Remove one or more working containers.
 | save       | Save an image to oci-archive tarball.
+
+## License
+
+Licensed under the [MIT](LICENSE) license.
