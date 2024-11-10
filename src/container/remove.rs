@@ -15,7 +15,7 @@ impl ContainerStore {
         let mut containers: Vec<Container> = Vec::new();
         let cnt_list = self.containers()?;
         for cnt in cnt_list {
-            if cnt.id()[..12] == dg.encoded[..12] {
+            if cnt.id() == dg.encoded {
                 continue;
             }
 

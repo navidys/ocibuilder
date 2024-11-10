@@ -3,7 +3,7 @@ use crate::{error::BuilderResult, utils};
 use super::oci::OCIBuilder;
 
 impl OCIBuilder {
-    pub fn rm(&self, containers: &Vec<String>) -> BuilderResult<()> {
+    pub fn rm(&self, containers: &[String]) -> BuilderResult<()> {
         self.lock()?;
 
         for cnt in containers {
