@@ -23,7 +23,7 @@ impl LayerStore {
 
         let overlays_subdir = [
             &self.overlay_diff_path(dg),
-            &self.overlay_merged_path(dg),
+            &self.overlay_rootfs_path(dg),
             &self.overlay_work_path(dg),
         ];
 

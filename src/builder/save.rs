@@ -100,9 +100,12 @@ impl OCIBuilder {
             }
         }
 
-        match fs::create_dir_all(&output_tmp_blobs_dir) {
+        let mut blob_sha256_dir = output_tmp_blobs_dir.clone();
+        blob_sha256_dir.push("sha256/");
+
+        match fs::create_dir_all(&blob_sha256_dir) {
             Ok(_) => {}
-            Err(err) => return Err(BuilderError::IoError(output_tmp_blobs_dir, err)),
+            Err(err) => return Err(BuilderError::IoError(blob_sha256_dir, err)),
         }
 
         let mut oci_layout_path = output_tmp_dir.clone();
@@ -146,7 +149,7 @@ impl OCIBuilder {
             index_annotations_opt = Some(index_annotations);
         }
 
-        let image_index_entry = ImageIndexEntry {
+        let image_index_entry: ImageIndexEntry = ImageIndexEntry {
             media_type: manifest::OCI_IMAGE_MEDIA_TYPE.to_string(),
             digest: manifest_digest.to_string(),
             size: manifest_size,
@@ -182,14 +185,16 @@ impl OCIBuilder {
     fn write_layers(&self, dest: &Path, layers: Vec<OciDescriptor>) -> BuilderResult<()> {
         for layer in layers {
             let layer_dg = utils::digest::Digest::new(&layer.digest)?;
+            let mut adest = dest.to_path_buf().clone();
+            adest.push(&layer_dg.algorithm);
+            adest.push(&layer_dg.encoded);
+
             let layer_src_path = self.layer_store().blob_path(&layer_dg);
-            let mut layer_output_dest = dest.to_path_buf();
-            layer_output_dest.push(&layer_dg.encoded);
 
             debug!("copy image layer {:.12}", layer_dg.encoded);
-            match fs::copy(&layer_src_path, &layer_output_dest) {
+            match fs::copy(&layer_src_path, &adest) {
                 Ok(_) => {}
-                Err(err) => return Err(BuilderError::IoError(layer_output_dest, err)),
+                Err(err) => return Err(BuilderError::IoError(adest, err)),
             }
         }
 
@@ -200,6 +205,7 @@ impl OCIBuilder {
         let image_config_src_path = self.image_store().config_path(dg);
 
         let mut config_output_file = dest.to_path_buf();
+        config_output_file.push(&dg.algorithm);
         config_output_file.push(&dg.encoded);
 
         debug!("copy image config {:.12}", dg.encoded);
@@ -217,6 +223,7 @@ impl OCIBuilder {
         let image_manifest_digest = utils::digest::Digest::new(&image_manifest_id)?;
 
         let mut manifest_output_file = dest.to_path_buf();
+        manifest_output_file.push(image_manifest_digest.algorithm);
         manifest_output_file.push(image_manifest_digest.encoded);
 
         debug!("copy image manifest {:.12}", dg.encoded);

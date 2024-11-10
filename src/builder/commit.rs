@@ -7,6 +7,7 @@ use std::{
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use log::debug;
 use oci_client::{
+    config::History,
     manifest::{self, OciDescriptor, OciImageManifest},
     Reference,
 };
@@ -86,7 +87,7 @@ impl OCIBuilder {
         //   6- update images.json
 
         // overlay-images 1- update created time
-        let mut config = self.container_store().get_config(&cnt_id)?;
+        let mut config = self.container_store().get_builder_config(&cnt_id)?;
         config.created = Some(chrono::Utc::now());
 
         // 2- update rootfs diff_ids
@@ -135,6 +136,38 @@ impl OCIBuilder {
         self.unlock()?;
 
         Ok(new_image_id_digest)
+    }
+
+    pub fn commit_with_history(
+        &self,
+        container: &str,
+        name: Option<String>,
+        msg: String,
+        empty_layer: bool,
+    ) -> BuilderResult<digest::Digest> {
+        self.lock()?;
+
+        let cnt_id = &self.container_store().container_digest(container)?;
+        let mut img_cfg = self.container_store().get_builder_config(cnt_id)?;
+
+        let mut img_history = img_cfg.history.to_owned().unwrap_or_default();
+        let change_history = History {
+            created: Some(chrono::Utc::now()),
+            author: None,
+            created_by: Some(msg.to_string()),
+            comment: None,
+            empty_layer: Some(empty_layer),
+        };
+
+        img_history.insert(0, change_history);
+        img_cfg.history = Some(img_history);
+
+        self.container_store()
+            .write_builder_config(cnt_id, &img_cfg)?;
+
+        self.unlock()?;
+
+        self.commit(container, name)
     }
 
     fn new_image_manifest(

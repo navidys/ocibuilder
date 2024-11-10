@@ -155,6 +155,17 @@ impl ContainerStore {
         Err(BuilderError::ContainerNotFound(name_or_id.to_string()))
     }
 
+    pub fn container_by_digest(&self, dg: &digest::Digest) -> BuilderResult<Container> {
+        let cnt_list = self.containers()?;
+        for cnt in cnt_list {
+            if cnt.id == dg.encoded {
+                return Ok(cnt);
+            }
+        }
+
+        Err(BuilderError::ContainerNotFound(dg.to_string()))
+    }
+
     pub fn containers_by_image(&self, image_id: &digest::Digest) -> BuilderResult<Vec<Container>> {
         let mut containers: Vec<Container> = Vec::new();
 

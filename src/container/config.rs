@@ -13,10 +13,14 @@ use super::store::ContainerStore;
 const BUILDER_FILENAME: &str = "builder.json";
 
 impl ContainerStore {
-    pub fn write_config(&self, cnt_id: &digest::Digest, img_cfg: &ConfigFile) -> BuilderResult<()> {
+    pub fn write_builder_config(
+        &self,
+        cnt_id: &digest::Digest,
+        img_cfg: &ConfigFile,
+    ) -> BuilderResult<()> {
         debug!("write builder config: {}", cnt_id);
 
-        let config_file_path = self.config_path(cnt_id);
+        let config_file_path = self.builder_config_path(cnt_id);
 
         let config_file = match File::create(&config_file_path) {
             Ok(f) => f,
@@ -31,10 +35,10 @@ impl ContainerStore {
         Ok(())
     }
 
-    pub fn get_config(&self, cnt_id: &digest::Digest) -> BuilderResult<ConfigFile> {
+    pub fn get_builder_config(&self, cnt_id: &digest::Digest) -> BuilderResult<ConfigFile> {
         debug!("get builder config: {}", cnt_id);
 
-        let config_file_path = self.config_path(cnt_id);
+        let config_file_path = self.builder_config_path(cnt_id);
         let config_file = match File::open(&config_file_path) {
             Ok(f) => f,
             Err(err) => return Err(BuilderError::IoError(config_file_path, err)),
@@ -48,7 +52,7 @@ impl ContainerStore {
         Ok(builder_config)
     }
 
-    pub fn config_path(&self, digest: &digest::Digest) -> PathBuf {
+    pub fn builder_config_path(&self, digest: &digest::Digest) -> PathBuf {
         let mut cpath = self.cstore_path().clone();
         cpath.push(&digest.encoded);
         cpath.push(BUILDER_FILENAME);

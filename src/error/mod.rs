@@ -24,6 +24,9 @@ pub enum BuilderError {
     ArchiveError(String),
 
     // general builder errors
+    #[error("anyhow error: {0}")]
+    AnyError(String),
+
     #[error("builder lock error: {0}")]
     BuilderLockError(io::Error),
 
@@ -38,6 +41,10 @@ pub enum BuilderError {
 
     #[error("mount/umount error: {0}")]
     MountUmountError(String),
+
+    // yuki error
+    #[error("yuki error: {0}")]
+    YukiError(String),
 
     // OCI spec errors
     #[error("oci spec error: {0}")]

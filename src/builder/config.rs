@@ -15,7 +15,7 @@ impl OCIBuilder {
 
         debug!("update container {} config", cnt_id);
 
-        let mut img_cfg = self.container_store().get_config(cnt_id)?;
+        let mut img_cfg = self.container_store().get_builder_config(cnt_id)?;
 
         if cfg.author.is_some() {
             self.set_author(&mut img_cfg, &cfg.author)?;
@@ -57,7 +57,8 @@ impl OCIBuilder {
             self.set_port(&mut img_cfg, &cfg.port)?;
         }
 
-        self.container_store().write_config(cnt_id, &img_cfg)?;
+        self.container_store()
+            .write_builder_config(cnt_id, &img_cfg)?;
         self.unlock()?;
         Ok(())
     }
