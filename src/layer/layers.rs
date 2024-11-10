@@ -1,4 +1,4 @@
-use std::fs::File;
+use std::{fs::File, path::PathBuf};
 
 use log::debug;
 use oci_client::manifest::OciDescriptor;
@@ -75,5 +75,12 @@ impl LayerStore {
         };
 
         Ok(layers)
+    }
+
+    pub fn layers_path(&self) -> PathBuf {
+        let mut layers_file = self.lstore_path().clone();
+        layers_file.push(LAYERS_FILENAME);
+
+        layers_file
     }
 }

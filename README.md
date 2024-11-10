@@ -41,6 +41,7 @@ ocibuilder config --port 4444/tcp $ctr1
 | pull       | Pull an image from the specified registry.
 | reset      | Reset local storage.
 | rm         | Remove one or more working containers.
+| rmi        | Remove one or more images from local storage.
 | save       | Save an image to oci-archive tarball.
 
 ## License

@@ -155,6 +155,19 @@ impl ContainerStore {
         Err(BuilderError::ContainerNotFound(name_or_id.to_string()))
     }
 
+    pub fn containers_by_image(&self, image_id: &digest::Digest) -> BuilderResult<Vec<Container>> {
+        let mut containers: Vec<Container> = Vec::new();
+
+        let cnt_list = self.containers()?;
+        for cnt in cnt_list {
+            if cnt.image_id() == image_id.encoded {
+                containers.push(cnt);
+            }
+        }
+
+        Ok(containers)
+    }
+
     pub fn containers_path(&self) -> PathBuf {
         let mut containers_file = self.cstore_path().clone();
         containers_file.push(CONTAINERS_FILENAME);

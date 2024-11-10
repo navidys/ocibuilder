@@ -69,6 +69,9 @@ pub enum BuilderError {
     #[error("image archive file exists: {0}")]
     ImageArchiveExits(PathBuf),
 
+    #[error("image used by a container: {0}")]
+    ImageUsedByContainer(String),
+
     // layers store error
     #[error("layer store error: {0}")]
     LayerStoreError(String),
