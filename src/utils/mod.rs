@@ -97,16 +97,11 @@ pub fn file_size(src: &Path) -> BuilderResult<i64> {
     }
 }
 
-
 pub fn is_empty_dir(dir_path: &Path) -> BuilderResult<bool> {
-    match dir_path.read_dir() {
-        Ok(mut dir) => {
-            if dir.next().is_none() {
-                return Ok(true)
-            }
-
-            return Ok(false)
-        },
+    let empty = match dir_path.read_dir() {
+        Ok(mut dir) => dir.next().is_none(),
         Err(err) => return Err(BuilderError::IoError(dir_path.to_path_buf(), err)),
     };
+
+    Ok(empty)
 }

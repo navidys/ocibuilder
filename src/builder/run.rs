@@ -52,8 +52,12 @@ impl OCIBuilder {
         debug!("yuki runtime systemd: {:?}", systemd_cgroup);
         debug!("yuki running cmd: {:?}", cmd);
 
-        match run_yuki::run_container(&runtime_path, &yuki_run_dir, &cnt_id.encoded, systemd_cgroup)
-        {
+        match run_yuki::run_container(
+            &runtime_path,
+            &yuki_run_dir,
+            &cnt_id.encoded,
+            systemd_cgroup,
+        ) {
             Ok(_) => {}
             Err(err) => {
                 debug!("yuki run error: {:?}", err);

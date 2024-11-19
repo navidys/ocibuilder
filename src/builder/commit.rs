@@ -70,8 +70,7 @@ impl OCIBuilder {
             // add compress, calculate hash and add top layer to overlay-layers
             let tmp_gz_output = self.layer_store().blob_path(&top_layer_digest);
             let layer_tar_gz_digest =
-            
-            self.compress_layer_archive(&layer_archive_path, &tmp_gz_output)?;
+                self.compress_layer_archive(&layer_archive_path, &tmp_gz_output)?;
 
             println!("Copying blob {:.12}", layer_tar_gz_digest.encoded);
 
@@ -92,7 +91,7 @@ impl OCIBuilder {
         } else {
             debug!("empty top layer");
         }
-    
+
         match serde_json::to_string(&config) {
             Ok(output) => {
                 self.image_store().write_config(&cnt_id, &output)?;
