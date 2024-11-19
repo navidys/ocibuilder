@@ -26,21 +26,6 @@ $ sudo dnf install        \
     openssl-devel
 ```
 
-### Debian, Ubuntu and related distributions
-
-```console
-$ sudo apt-get install  \
-    fuse3               \
-    fuse-overlayfs      \
-    pkg-config          \
-    libsystemd-dev      \
-    build-essential     \
-    libelf-dev          \
-    libseccomp-dev      \
-    libclang-dev        \
-    libssl-dev
-```
-
 ## Limitations
 
 * sha384 and sha512 digests are not yet supported
