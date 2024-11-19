@@ -18,7 +18,7 @@ use super::run_yuki_executer;
 pub fn run_container(
     bundle_dir: &Path,
     root_path: &Path,
-    cnt_id: String,
+    cnt_id: &str,
     systemd_cgroup: &bool,
 ) -> BuilderResult<()> {
     let args = liboci_cli::Run {
@@ -28,7 +28,7 @@ pub fn run_container(
         no_pivot: false,
         no_new_keyring: true,
         preserve_fds: 0,
-        container_id: cnt_id.clone(),
+        container_id: cnt_id.to_string(),
         no_subreaper: true,
         detach: false,
         keep: false,
