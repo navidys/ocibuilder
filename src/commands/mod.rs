@@ -8,5 +8,6 @@ pub mod pull;
 pub mod reset;
 pub mod rm;
 pub mod rmi;
+pub mod run;
 pub mod save;
 pub mod umount;

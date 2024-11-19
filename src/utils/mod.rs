@@ -7,10 +7,33 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::error::{BuilderError, BuilderResult};
+use libcontainer::utils::create_dir_all_with_mode;
+use log::debug;
+use nix::sys::stat::Mode;
 use rand::Rng;
 use sha2::{Digest, Sha256};
 
-use crate::error::{BuilderError, BuilderResult};
+pub fn get_run_dir(run_dir: &Option<OsString>) -> BuilderResult<PathBuf> {
+    let user_uid = nix::unistd::geteuid().as_raw();
+    match run_dir {
+        Some(run) => Ok(PathBuf::from(run)),
+        None => {
+            let run_path = if user_uid == 0 {
+                PathBuf::from("/run/ocibuilder")
+            } else {
+                PathBuf::from(format!("/run/user/{}/youki", user_uid))
+            };
+            debug!("create runtime directory: {:?}", &run_path);
+            match create_dir_all_with_mode(&run_path, user_uid, Mode::S_IRWXU) {
+                Ok(_) => {}
+                Err(err) => return Err(BuilderError::AnyError(err.to_string())),
+            }
+
+            Ok(run_path)
+        }
+    }
+}
 
 pub fn get_root_dir(root_dir: Option<OsString>) -> PathBuf {
     match root_dir {

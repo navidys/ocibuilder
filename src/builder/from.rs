@@ -69,7 +69,8 @@ impl OCIBuilder {
 
             let img_config = self.image_store().get_config(&img_digest)?;
 
-            self.container_store().write_config(&cnt_id, &img_config)?;
+            self.container_store()
+                .write_builder_config(&cnt_id, &img_config)?;
         } else {
             let layer_digest = utils::new_digest_id()?;
             debug!("container top layer: {}", layer_digest);
@@ -107,7 +108,8 @@ impl OCIBuilder {
             img_history.insert(0, change_history);
             scratch_cfg.history = Some(img_history);
 
-            self.container_store().write_config(&cnt_id, &scratch_cfg)?;
+            self.container_store()
+                .write_builder_config(&cnt_id, &scratch_cfg)?;
         }
 
         self.unlock()?;

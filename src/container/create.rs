@@ -45,6 +45,8 @@ impl ContainerStore {
 
         self.write_containers(cnt_config)?;
 
+        self.generate_runtime_spec(&new_cnt_id)?;
+
         Ok(new_cnt_id)
     }
 }

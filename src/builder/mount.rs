@@ -23,7 +23,7 @@ impl OCIBuilder {
 
         let top_layer = cnt.top_layer();
         let top_layer_digest = utils::digest::Digest::new(&format!("sha256:{}", top_layer))?;
-        let mount_point = self.layer_store().overlay_merged_path(&top_layer_digest);
+        let mount_point = self.layer_store().overlay_rootfs_path(&top_layer_digest);
         debug!("container {:.12} mount point: {:?}", cnt.id(), mount_point);
 
         let workdir_path = self.layer_store().overlay_work_path(&top_layer_digest);
@@ -85,7 +85,7 @@ impl OCIBuilder {
         let cnt = self.container_store().container_exist(container)?;
         let top_layer = cnt.top_layer();
         let top_layer_digest = utils::digest::Digest::new(&format!("sha256:{}", top_layer))?;
-        let mount_point = self.layer_store().overlay_merged_path(&top_layer_digest);
+        let mount_point = self.layer_store().overlay_rootfs_path(&top_layer_digest);
 
         if is_mounted(&mount_point)? {
             debug!(

@@ -2,7 +2,7 @@ use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
 use ocibuilder::commands::{
-    commit, config, containers, from, images, mount, pull, reset, rm, rmi, save, umount,
+    commit, config, containers, from, images, mount, pull, reset, rm, rmi, run, save, umount,
 };
 
 #[derive(Parser, Debug)]
@@ -47,6 +47,9 @@ enum SubCommand {
     /// Remove one or more images from local storage.
     Rmi(rmi::RemoveImage),
 
+    /// Run a command inside of the container.
+    Run(run::Run),
+
     /// Save an image to oci-archive
     Save(save::Save),
 
@@ -73,6 +76,7 @@ async fn main() {
         SubCommand::Pull(pull) => pull.exec(root_dir).await,
         SubCommand::Rm(rm) => rm.exec(root_dir),
         SubCommand::Rmi(rmi) => rmi.exec(root_dir),
+        SubCommand::Run(run) => run.exec(root_dir),
         SubCommand::Reset(reset) => reset.exec(root_dir),
         SubCommand::Save(save) => save.exec(root_dir),
         SubCommand::Mount(mount) => mount.exec(root_dir),

@@ -10,6 +10,7 @@ homepage = "https://github.com/navidys/ocibuilder"
 repository = "https://github.com/navidys/ocibuilder"
 
 [dependencies]
+anyhow = "1.0.93"
 base16ct = { version = "0.2.0", features = ["alloc"] }
 chrono = "0.4.38"
 clap = { version = "4.5.18", features = ["derive"] }
@@ -19,8 +20,10 @@ flate2 = { version = "1.0.34", features = ["zlib"] }
 fs2 = "0.4.3"
 home = "0.5.9"
 lazy_static = "1.5.0"
+libcontainer = { version = "0.4.1", features = ["cgroupsv2_devices", "libseccomp", "systemd", "v1", "v2"] }
+liboci-cli = "0.4.1"
 log = "0.4.22"
-nix = { version = "0.29.0", features = ["mount", "user"] }
+nix = { version = "0.28.0", features = ["mount", "user"] }
 oci-client = "0.13.0"
 oci-spec = "0.7.0"
 rand = "0.8.5"

@@ -1,12 +1,45 @@
 # ocibuilder
 OCI (Open Container Initiative) image builder written in Rust.
 
+OCIBuilder is using [yuki](https://github.com/youki-dev/youki) runtime.
+
 The project is under development and not ready for usage (feel free to contribute).
 
-## Requirements
+## Requires
 
-* fuse
-* fuse-overlayfs
+- Rust (see [here](https://www.rust-lang.org/tools/install)), edition 2021
+- linux kernel ≥ 5.3
+
+## Dependencies
+
+### Fedora, CentOS, RHEL and related distributions
+
+```console
+$ sudo dnf install        \
+    fuse                  \
+    fuse-overlayfs        \
+    pkg-config            \
+    systemd-devel         \
+    elfutils-libelf-devel \
+    libseccomp-devel      \
+    clang-devel           \
+    openssl-devel
+```
+
+### Debian, Ubuntu and related distributions
+
+```console
+$ sudo apt-get install  \
+    fuse3               \
+    fuse-overlayfs      \
+    pkg-config          \
+    libsystemd-dev      \
+    build-essential     \
+    libelf-dev          \
+    libseccomp-dev      \
+    libclang-dev        \
+    libssl-dev
+```
 
 ## Limitations
 
@@ -25,6 +58,8 @@ make
 ctr1=$(ocibuilder from "${1:-quay.io/quay/busybox:latest}" | tail -1)
 ocibuilder config --author navid --user apache $ctr1
 ocibuilder config --port 4444/tcp $ctr1
+ocibuilder run $ctr1 date > date.txt
+ocibuilder commit $ctr1
 ```
 
 ## Commands
@@ -42,6 +77,7 @@ ocibuilder config --port 4444/tcp $ctr1
 | reset      | Reset local storage.
 | rm         | Remove one or more working containers.
 | rmi        | Remove one or more images from local storage.
+| run        | Run a command inside of the container.
 | save       | Save an image to oci-archive tarball.
 
 ## License

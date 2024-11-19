@@ -42,6 +42,12 @@ impl LayerStore {
         &self.overlay_path
     }
 
+    pub fn overlay_dir_path(&self, dg: &digest::Digest) -> PathBuf {
+        let mut dir_path = self.overlay_path.clone();
+        dir_path.push(&dg.encoded);
+        dir_path
+    }
+
     pub fn overlay_diff_path(&self, dg: &digest::Digest) -> PathBuf {
         let mut diff_path = self.overlay_path.clone();
         diff_path.push(&dg.encoded);
@@ -49,10 +55,10 @@ impl LayerStore {
         diff_path
     }
 
-    pub fn overlay_merged_path(&self, dg: &digest::Digest) -> PathBuf {
+    pub fn overlay_rootfs_path(&self, dg: &digest::Digest) -> PathBuf {
         let mut merged_path = self.overlay_path.clone();
         merged_path.push(&dg.encoded);
-        merged_path.push("merged");
+        merged_path.push("rootfs");
         merged_path
     }
 
