@@ -30,7 +30,7 @@ $ sudo dnf install        \
 
 ```console
 $ sudo apt-get install  \
-    fuse                \
+    fuse3               \
     fuse-overlayfs      \
     pkg-config          \
     libsystemd-dev      \
