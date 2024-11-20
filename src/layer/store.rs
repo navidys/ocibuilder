@@ -5,6 +5,7 @@ use crate::{
     utils::digest,
 };
 
+#[derive(Clone)]
 pub struct LayerStore {
     lstore_path: PathBuf,
     overlay_path: PathBuf,

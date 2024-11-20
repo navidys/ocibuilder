@@ -42,6 +42,9 @@ pub enum BuilderError {
     #[error("mount/umount error: {0}")]
     MountUmountError(String),
 
+    #[error("spawn: {0}")]
+    SpawnError(String),
+
     // yuki error
     #[error("yuki error: {0}")]
     YukiError(String),
