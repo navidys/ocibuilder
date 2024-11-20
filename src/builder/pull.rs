@@ -2,7 +2,10 @@ use log::debug;
 use oci_client::{manifest::OciDescriptor, Client, Reference};
 
 use crate::{
-    builder::dist_client, error::{BuilderError, BuilderResult}, layer::store::LayerStore, utils::{self, digest}
+    builder::dist_client,
+    error::{BuilderError, BuilderResult},
+    layer::store::LayerStore,
+    utils::{self, digest},
 };
 
 use super::oci::OCIBuilder;
@@ -47,13 +50,15 @@ impl OCIBuilder {
             let spawn_layer = layer.clone();
             let spawn_layerstore = self.layer_store().clone();
             let spawn_client = client.clone();
-            let pull_job = tokio::spawn(async move { pull_image_blob(spawn_layerstore, spawn_client, spawn_ref, spawn_layer).await });
+            let pull_job = tokio::spawn(async move {
+                pull_image_blob(spawn_layerstore, spawn_client, spawn_ref, spawn_layer).await
+            });
             pull_handlers.push(pull_job);
         }
 
         for phandler in pull_handlers {
             match phandler.await {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(err) => return Err(BuilderError::SpawnError(err.to_string())),
             }
         }
@@ -76,7 +81,12 @@ impl OCIBuilder {
     }
 }
 
-async fn pull_image_blob(layerstore: LayerStore, client: Client, reference: Reference, layer: OciDescriptor) -> BuilderResult<()> {
+async fn pull_image_blob(
+    layerstore: LayerStore,
+    client: Client,
+    reference: Reference,
+    layer: OciDescriptor,
+) -> BuilderResult<()> {
     let mut blob: Vec<u8> = Vec::new();
     debug!("pull blob: {}", layer.digest);
 
