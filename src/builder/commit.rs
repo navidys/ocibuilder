@@ -7,7 +7,6 @@ use std::{
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use log::debug;
 use oci_client::{
-    config::History,
     manifest::{self, OciDescriptor, OciImageManifest},
     Reference,
 };
@@ -34,17 +33,10 @@ impl OCIBuilder {
 
         let diff_path = self.layer_store().overlay_diff_path(&top_layer_digest);
 
-        let mut layer_archive_path = self.tmp_dir().clone();
-        let archive_name = format!("{:.12}-top-diff.tar", cnt.id());
-        layer_archive_path.push(archive_name);
+        let is_empty_layer = utils::is_empty_dir(&diff_path)?;
 
-        // create tar archive of top layer
-        let layer_tar_id = self.create_layer_tar_archive(&diff_path, &layer_archive_path)?;
-
-        // add compress, calculate hash and add top layer to overlay-layers
-        let tmp_gz_output = self.layer_store().blob_path(&top_layer_digest);
-        let layer_tar_gz_digest =
-            self.compress_layer_archive(&layer_archive_path, &tmp_gz_output)?;
+        let mut config = self.container_store().get_builder_config(&cnt_id)?;
+        config.created = Some(chrono::Utc::now());
 
         if cnt.image_name() != images::SCRATCH_IMAGE_NAME {
             let cnt_image_id = utils::digest::Digest::new(&format!("sha256:{}", cnt.image_id()))?;
@@ -64,34 +56,42 @@ impl OCIBuilder {
             }
         }
 
-        println!("Copying blob {:.12}", layer_tar_gz_digest.encoded);
+        let mut layer_archive_path = self.tmp_dir().clone();
+        let mut layer_oci_desc: Option<OciDescriptor> = None;
+        if !is_empty_layer {
+            debug!("not an empty top layer");
 
-        // update layers.json
-        let layer_gz_output = self.layer_store().blob_path(&layer_tar_gz_digest);
-        let layer_size = utils::file_size(&layer_gz_output)?;
-        let layer_oci_desc = manifest::OciDescriptor {
-            size: layer_size,
-            media_type: manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE.to_string(),
-            digest: layer_tar_gz_digest.to_string(),
-            urls: None,
-            annotations: None,
-        };
-        self.layer_store().add_layer_desc(&layer_oci_desc)?;
+            let archive_name = format!("{:.12}-top-diff.tar", cnt.id());
+            layer_archive_path.push(archive_name);
 
-        // overlay-images
-        //   1- update created time
-        //   2- update rootfs diff_ids
-        //   3- calc image new ID and rename
-        //   4- create image manifest
-        //   5- create image name
-        //   6- update images.json
+            // create tar archive of top layer
+            let layer_tar_id = self.create_layer_tar_archive(&diff_path, &layer_archive_path)?;
 
-        // overlay-images 1- update created time
-        let mut config = self.container_store().get_builder_config(&cnt_id)?;
-        config.created = Some(chrono::Utc::now());
+            // add compress, calculate hash and add top layer to overlay-layers
+            let tmp_gz_output = self.layer_store().blob_path(&top_layer_digest);
+            let layer_tar_gz_digest =
+                self.compress_layer_archive(&layer_archive_path, &tmp_gz_output)?;
 
-        // 2- update rootfs diff_ids
-        config.rootfs.diff_ids.push(layer_tar_id.to_string());
+            println!("Copying blob {:.12}", layer_tar_gz_digest.encoded);
+
+            // update layers.json
+            let layer_gz_output = self.layer_store().blob_path(&layer_tar_gz_digest);
+            let layer_size = utils::file_size(&layer_gz_output)?;
+            let new_layer_oci_desc = manifest::OciDescriptor {
+                size: layer_size,
+                media_type: manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE.to_string(),
+                digest: layer_tar_gz_digest.to_string(),
+                urls: None,
+                annotations: None,
+            };
+            self.layer_store().add_layer_desc(&new_layer_oci_desc)?;
+            layer_oci_desc = Some(new_layer_oci_desc.clone());
+
+            config.rootfs.diff_ids.push(layer_tar_id.to_string());
+        } else {
+            debug!("empty top layer");
+        }
+
         match serde_json::to_string(&config) {
             Ok(output) => {
                 self.image_store().write_config(&cnt_id, &output)?;
@@ -128,9 +128,11 @@ impl OCIBuilder {
             .write_images(&new_image_reference, &new_image_id_digest)?;
 
         // remove tmp content
-        match fs::remove_file(&layer_archive_path) {
-            Ok(_) => {}
-            Err(err) => return Err(BuilderError::IoError(layer_archive_path, err)),
+        if layer_archive_path.is_file() {
+            match fs::remove_file(&layer_archive_path) {
+                Ok(_) => {}
+                Err(err) => return Err(BuilderError::IoError(layer_archive_path, err)),
+            }
         }
 
         self.unlock()?;
@@ -138,43 +140,11 @@ impl OCIBuilder {
         Ok(new_image_id_digest)
     }
 
-    pub fn commit_with_history(
-        &self,
-        container: &str,
-        name: Option<String>,
-        msg: String,
-        empty_layer: bool,
-    ) -> BuilderResult<digest::Digest> {
-        self.lock()?;
-
-        let cnt_id = &self.container_store().container_digest(container)?;
-        let mut img_cfg = self.container_store().get_builder_config(cnt_id)?;
-
-        let mut img_history = img_cfg.history.to_owned().unwrap_or_default();
-        let change_history = History {
-            created: Some(chrono::Utc::now()),
-            author: None,
-            created_by: Some(msg.to_string()),
-            comment: None,
-            empty_layer: Some(empty_layer),
-        };
-
-        img_history.insert(0, change_history);
-        img_cfg.history = Some(img_history);
-
-        self.container_store()
-            .write_builder_config(cnt_id, &img_cfg)?;
-
-        self.unlock()?;
-
-        self.commit(container, name)
-    }
-
     fn new_image_manifest(
         &self,
         cnt: &Container,
         image_id: &digest::Digest,
-        new_layer: &OciDescriptor,
+        new_layer: &Option<OciDescriptor>,
     ) -> BuilderResult<OciImageManifest> {
         debug!("new image manifest");
 
@@ -207,7 +177,9 @@ impl OCIBuilder {
             }
         }
 
-        new_image_layers.push(new_layer.to_owned());
+        if new_layer.is_some() {
+            new_image_layers.push(new_layer.clone().unwrap_or_default());
+        }
 
         let new_image_config = OciDescriptor {
             media_type: manifest::IMAGE_CONFIG_MEDIA_TYPE.to_string(),

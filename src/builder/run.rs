@@ -7,6 +7,7 @@ use std::{
 
 use libcontainer::oci_spec::runtime::Spec;
 use log::debug;
+use oci_client::config::History;
 
 use crate::{
     builder::run_yuki,
@@ -51,8 +52,12 @@ impl OCIBuilder {
         debug!("yuki runtime systemd: {:?}", systemd_cgroup);
         debug!("yuki running cmd: {:?}", cmd);
 
-        match run_yuki::run_container(&runtime_path, &yuki_run_dir, cnt_id.encoded, systemd_cgroup)
-        {
+        match run_yuki::run_container(
+            &runtime_path,
+            &yuki_run_dir,
+            &cnt_id.encoded,
+            systemd_cgroup,
+        ) {
             Ok(_) => {}
             Err(err) => {
                 debug!("yuki run error: {:?}", err);
@@ -78,11 +83,36 @@ impl OCIBuilder {
             }
         }
 
-        // update history and add layer
-
         self.umount(container)?;
 
-        self.commit_with_history(container, None, cmd.join(" "), true)?;
+        // update history
+        let diff_path = self.layer_store().overlay_diff_path(&cnt_top_layer_digest);
+        let is_empty_layer = utils::is_empty_dir(&diff_path)?;
+
+        let mut img_cfg = self.container_store().get_builder_config(&cnt_id)?;
+
+        let mut img_history = img_cfg.history.to_owned().unwrap_or_default();
+        let mut change_history = History {
+            created: Some(chrono::Utc::now()),
+            author: None,
+            created_by: Some(cmd.join(" ")),
+            comment: None,
+            empty_layer: None,
+        };
+
+        if is_empty_layer {
+            change_history.empty_layer = Some(is_empty_layer)
+        }
+
+        img_history.insert(0, change_history);
+        img_cfg.history = Some(img_history);
+
+        self.container_store()
+            .write_builder_config(&cnt_id, &img_cfg)?;
+
+        if !is_empty_layer {
+            self.commit(container, None)?;
+        }
 
         self.unlock()?;
         Ok(())
