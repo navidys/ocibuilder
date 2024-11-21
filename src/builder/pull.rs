@@ -1,4 +1,8 @@
-use log::debug;
+use std::sync::mpsc;
+use std::{thread, time::Duration};
+
+use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use log::{debug, error};
 use oci_client::{manifest::OciDescriptor, Client, Reference};
 
 use crate::{
@@ -7,6 +11,8 @@ use crate::{
     layer::store::LayerStore,
     utils::{self, digest},
 };
+
+use rand::Rng;
 
 use super::oci::OCIBuilder;
 
@@ -44,14 +50,51 @@ impl OCIBuilder {
 
         let image_digest = utils::digest::Digest::new(&manifest.config.digest)?;
 
+        let m: MultiProgress = MultiProgress::new();
+
         let mut pull_handlers = Vec::new();
+        let mut threads = vec![];
+
         for layer in &manifest.layers {
+            let layer_digest = utils::digest::Digest::new(&layer.digest)?;
+            let (tx, rx) = mpsc::channel();
+
+            let spinner_bar = ProgressBar::new_spinner();
+            let mspinner_bar = m.clone().add(spinner_bar);
+            let style = match ProgressStyle::with_template("Copying blob {msg} {spinner:.yellow}") {
+                Ok(st) => st,
+                Err(err) => return Err(BuilderError::TerminalMultiProgressError(err.to_string())),
+            };
+            mspinner_bar.enable_steady_tick(Duration::from_millis(100));
+            mspinner_bar.set_style(style.clone());
+            mspinner_bar.set_message(format!("{:.12} in progress", layer_digest.encoded));
+            threads.push(thread::spawn(move || loop {
+                match rx.recv() {
+                    Ok(_) => {
+                        mspinner_bar.enable_steady_tick(Duration::from_millis(100));
+                        mspinner_bar.set_style(style.clone());
+                        mspinner_bar
+                            .set_message(format!("{:.12} in progress", layer_digest.encoded));
+                        thread::sleep(
+                            rand::thread_rng()
+                                .gen_range(Duration::from_secs(1)..Duration::from_secs(5)),
+                        );
+                    }
+                    Err(err) => {
+                        debug!("spinner rx received: {:?}", err);
+                        mspinner_bar
+                            .finish_with_message(format!("{:.12} done", layer_digest.encoded));
+                        break;
+                    }
+                }
+            }));
+
             let spawn_ref = reference.clone();
             let spawn_layer = layer.clone();
             let spawn_layerstore = self.layer_store().clone();
             let spawn_client = client.clone();
             let pull_job = tokio::spawn(async move {
-                pull_image_blob(spawn_layerstore, spawn_client, spawn_ref, spawn_layer).await
+                pull_image_blob(spawn_layerstore, spawn_client, spawn_ref, spawn_layer, tx).await
             });
             pull_handlers.push(pull_job);
         }
@@ -61,6 +104,27 @@ impl OCIBuilder {
                 Ok(_) => {}
                 Err(err) => return Err(BuilderError::SpawnError(err.to_string())),
             }
+        }
+
+        for sthread in threads {
+            if !sthread.is_finished() {
+                match sthread.join() {
+                    Ok(_) => {}
+                    Err(err) => {
+                        error!("spinner thread join error: {:?}", err);
+
+                        return Err(BuilderError::SpawnError(
+                            "cannot stop spinner thread".to_string(),
+                        ));
+                    }
+                }
+            }
+        }
+
+        for layer in &manifest.layers {
+            debug!("adding layers to layerstore");
+
+            self.layer_store().add_layer_desc(layer)?;
         }
 
         // write image config
@@ -86,34 +150,36 @@ async fn pull_image_blob(
     client: Client,
     reference: Reference,
     layer: OciDescriptor,
+    tx: mpsc::Sender<()>,
 ) -> BuilderResult<()> {
     let mut blob: Vec<u8> = Vec::new();
     debug!("pull blob: {}", layer.digest);
 
     let layer_digest = utils::digest::Digest::new(&layer.digest)?;
-    println!("Copying blob {:.1$}", layer_digest.encoded, 12);
 
     match client.pull_blob(&reference, &layer, &mut blob).await {
-        Ok(_) => {
-            layerstore.write_blob(&layer_digest, &blob)?;
-
-            // create layer overlay dir
-            layerstore.create_layer_overlay_dir(&layer_digest)?;
-
-            // add pulled layer to layers
-            layerstore.add_layer_desc(&layer)?;
-
-            // extract content to overlay diff
-            let over_diff = layerstore.overlay_diff_path(&layer_digest);
-            let buf = flate2::read::GzDecoder::new(blob.as_slice());
-            let mut blob_archive = tar::Archive::new(buf);
-            blob_archive.set_preserve_ownerships(false);
-            match blob_archive.unpack(over_diff) {
-                Ok(_) => {}
-                Err(err) => return Err(BuilderError::ArchiveError(err.to_string())),
-            }
-        }
+        Ok(_) => {}
         Err(err) => return Err(BuilderError::OciDistError(err)),
+    };
+
+    layerstore.write_blob(&layer_digest, &blob)?;
+
+    // create layer overlay dir
+    layerstore.create_layer_overlay_dir(&layer_digest)?;
+
+    // extract content to overlay diff
+    let over_diff = layerstore.overlay_diff_path(&layer_digest);
+    let buf = flate2::read::GzDecoder::new(blob.as_slice());
+    let mut blob_archive = tar::Archive::new(buf);
+    blob_archive.set_preserve_ownerships(false);
+    match blob_archive.unpack(over_diff) {
+        Ok(_) => {}
+        Err(err) => return Err(BuilderError::ArchiveError(err.to_string())),
+    }
+
+    match tx.send(()) {
+        Ok(_) => {}
+        Err(err) => return Err(BuilderError::SpawnError(err.to_string())),
     }
 
     Ok(())

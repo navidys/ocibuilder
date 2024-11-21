@@ -24,6 +24,12 @@ pub enum BuilderError {
     ArchiveError(String),
 
     // general builder errors
+    #[error("response error: {0}")]
+    ResponseError(String),
+
+    #[error("terminal multi progress error: {0}")]
+    TerminalMultiProgressError(String),
+
     #[error("anyhow error: {0}")]
     AnyError(String),
 

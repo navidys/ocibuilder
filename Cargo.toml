@@ -19,6 +19,7 @@ env_logger = "0.11.5"
 flate2 = { version = "1.0.34", features = ["zlib"] }
 fs2 = "0.4.3"
 home = "0.5.9"
+indicatif = "0.17.9"
 lazy_static = "1.5.0"
 libcontainer = { version = "0.4.1", features = ["cgroupsv2_devices", "libseccomp", "systemd", "v1", "v2"] }
 liboci-cli = "0.4.1"
@@ -35,4 +36,5 @@ tabwriter = "1.4.0"
 tar = "0.4.42"
 thiserror = "1.0.63"
 tokio = { version = "1.40.0", features = ["rt-multi-thread"] }
+tokio-util = { version = "0.7.12", features = ["io"] }
 walkdir = "2.5.0"
