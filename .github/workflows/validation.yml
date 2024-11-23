@@ -28,3 +28,10 @@ jobs:
         - uses: actions/checkout@v4
         - run: sudo apt-get install -y fuse3 fuse-overlayfs pkg-config libsystemd-dev build-essential libelf-dev libseccomp-dev libclang-dev libssl-dev
         - run: make validate
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+        - uses: actions/checkout@v4
+        - run: sudo apt-get install -y fuse3 fuse-overlayfs pkg-config libsystemd-dev build-essential libelf-dev libseccomp-dev libclang-dev libssl-dev
+        - run: make test

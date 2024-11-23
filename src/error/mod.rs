@@ -63,6 +63,9 @@ pub enum BuilderError {
     #[error("container store error: {0}")]
     ContainerStoreError(String),
 
+    #[error("container with same name found: {0}")]
+    ContainerWithSameName(String),
+
     #[error("container not found: {0}")]
     ContainerNotFound(String),
 

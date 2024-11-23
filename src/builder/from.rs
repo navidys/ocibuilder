@@ -1,7 +1,11 @@
 use log::debug;
 use oci_client::config::{ConfigFile, History};
 
-use crate::{error::BuilderResult, image::images, utils};
+use crate::{
+    error::{BuilderError, BuilderResult},
+    image::images,
+    utils,
+};
 
 use super::oci::OCIBuilder;
 
@@ -9,6 +13,19 @@ impl OCIBuilder {
     pub async fn from(&self, img_name: &str, name: Option<String>) -> BuilderResult<String> {
         self.lock()?;
         let mut cnt_name = name.unwrap_or_default();
+
+        if !cnt_name.is_empty() {
+            match self.container_store().container_exist(&cnt_name) {
+                Ok(_) => return Err(BuilderError::ContainerWithSameName(cnt_name)),
+                Err(err) => {
+                    if err.to_string()
+                        != BuilderError::ContainerNotFound(cnt_name.clone()).to_string()
+                    {
+                        return Err(err);
+                    }
+                }
+            }
+        }
 
         if img_name != images::SCRATCH_IMAGE_NAME {
             let img_exist_digest = match self.image_store().image_digest(img_name) {

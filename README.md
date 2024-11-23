@@ -1,7 +1,7 @@
 # ocibuilder
 OCI (Open Container Initiative) image builder written in Rust.
 
-OCIBuilder is using [yuki](https://github.com/youki-dev/youki) runtime.
+OCIBuilder is using [yuki](https://github.com/youki-dev/youki) runtime library within ocibuilder at moment.
 
 The project is under development and not ready for usage (feel free to contribute).
 
@@ -43,8 +43,12 @@ make
 ctr1=$(ocibuilder from "${1:-quay.io/quay/busybox:latest}" | tail -1)
 ocibuilder config --author navid --user apache $ctr1
 ocibuilder config --port 4444/tcp $ctr1
-ocibuilder run $ctr1 date > date.txt
+ocibuilder run $ctr1 touch ocibuilder.txt
 ocibuilder commit $ctr1
+ocibuilder save -o /tmp/new_image.tar $ctr1
+
+# Load the save image via podman
+podman image load -i /tmp/new_image.tar
 ```
 
 ## Commands
@@ -64,6 +68,16 @@ ocibuilder commit $ctr1
 | rmi        | Remove one or more images from local storage.
 | run        | Run a command inside of the container.
 | save       | Save an image to oci-archive tarball.
+
+
+## Run tests
+
+`NOTE`: its required to run `ocibuilder reset` command before running the tests.
+
+```shell
+make validate-all
+make test
+```
 
 ## License
 
