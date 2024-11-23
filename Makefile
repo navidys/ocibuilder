@@ -74,11 +74,11 @@ uninstall: ## Uninstall ocibuilder binary
 test: $(CARGO_TARGET_DIR) ## Run builder tests
 	$(CARGO) test --test builder
 
-.PHONY: validate-all
-validate-all: cargo_validate pre-commit codespell ## Validate all including cargo
+.PHONY: validate
+validate: validate.cargo pre-commit codespell ## Validate all including cargo
 
-.PHONY: cargo_validate
-validate: $(CARGO_TARGET_DIR) ## Cargo fmt and clippy validation
+.PHONY: validate.cargo
+validate.cargo: $(CARGO_TARGET_DIR) ## Cargo fmt and clippy validation
 	$(CARGO) fmt --all -- --check
 	$(CARGO) clippy -p ocibuilder@$(CRATE_VERSION) -- -D warnings
 
