@@ -77,7 +77,7 @@ podman image load -i /tmp/new_image.tar
 `NOTE`: its required to run `ocibuilder reset` command before running the tests.
 
 ```shell
-make validate-all
+make validate
 make test
 ```
 

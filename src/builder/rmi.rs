@@ -1,3 +1,5 @@
+use log::debug;
+
 use crate::{
     error::{BuilderError, BuilderResult},
     utils,
@@ -11,7 +13,9 @@ impl OCIBuilder {
 
         for img in images {
             let img_id = self.image_store().image_digest(img)?;
-            let cnt_list = self.container_store().containers_by_image(&img_id)?;
+            let cnt_list: Vec<crate::container::containers::Container> = self.container_store().containers_by_image(&img_id)?;
+            debug!("container used by image: {:?}", cnt_list);
+
             if !cnt_list.is_empty() {
                 if !force {
                     return Err(BuilderError::ImageUsedByContainer(cnt_list[0].id()));

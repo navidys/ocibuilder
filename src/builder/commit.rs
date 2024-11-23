@@ -5,7 +5,7 @@ use std::{
 };
 
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
-use log::debug;
+use log::{debug, warn};
 use oci_client::{
     manifest::{self, OciDescriptor, OciImageManifest},
     Reference,
@@ -159,12 +159,14 @@ impl OCIBuilder {
             image_annotations = img_manifest.annotations;
 
             for layer in img_manifest.layers {
-                let mut layer_type = String::new();
+                let mut layer_type = manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE.to_string();
 
                 if layer.media_type == manifest::IMAGE_DOCKER_LAYER_GZIP_MEDIA_TYPE {
                     layer_type = manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE.to_string()
                 } else if layer.media_type == manifest::IMAGE_DOCKER_LAYER_TAR_MEDIA_TYPE {
                     layer_type = manifest::IMAGE_LAYER_MEDIA_TYPE.to_string()
+                } else {
+                    warn!("unknown layer type: {}", layer.media_type);
                 }
 
                 new_image_layers.push(OciDescriptor {

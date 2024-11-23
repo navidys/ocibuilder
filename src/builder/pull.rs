@@ -3,7 +3,7 @@ use std::{thread, time::Duration};
 
 use indicatif::{DecimalBytes, MultiProgress, ProgressBar, ProgressStyle};
 use log::{debug, error};
-use oci_client::{manifest::OciDescriptor, Client, Reference};
+use oci_client::{manifest, Client, Reference};
 
 use crate::{
     builder::dist_client,
@@ -52,10 +52,20 @@ impl OCIBuilder {
 
         let m: MultiProgress = MultiProgress::new();
 
-        let mut pull_handlers = Vec::new();
+        let mut pull_handlers: Vec<tokio::task::JoinHandle<Result<(), BuilderError>>> = Vec::new();
         let mut threads = vec![];
+        let mut layer_oci_manifest = manifest.clone();
+        let mut layer_oci_disctriptor = Vec::new();
 
         for layer in &manifest.layers {
+            layer_oci_disctriptor.push(manifest::OciDescriptor {
+                media_type: manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE.to_string(),
+                digest: layer.digest.clone(),
+                size: layer.size,
+                urls: layer.urls.clone(),
+                annotations: layer.annotations.clone(),
+            });
+
             let layer_digest = utils::digest::Digest::new(&layer.digest)?;
             let layer_size = DecimalBytes(u64::try_from(layer.size).unwrap_or_default());
 
@@ -126,7 +136,9 @@ impl OCIBuilder {
             }
         }
 
-        for layer in &manifest.layers {
+        layer_oci_manifest.layers = layer_oci_disctriptor;
+
+        for layer in &layer_oci_manifest.layers {
             debug!("adding layers to layerstore");
 
             self.layer_store().add_layer_desc(layer)?;
@@ -139,7 +151,7 @@ impl OCIBuilder {
         // write image manifest
         println!("Writing manifest to image destination");
         self.image_store()
-            .write_manifest(&image_digest, &manifest)?;
+            .write_manifest(&image_digest, &layer_oci_manifest)?;
 
         // update images
         self.image_store().write_images(&reference, &image_digest)?;
@@ -154,7 +166,7 @@ async fn pull_image_blob(
     layerstore: LayerStore,
     client: Client,
     reference: Reference,
-    layer: OciDescriptor,
+    layer: manifest::OciDescriptor,
     tx: mpsc::Sender<()>,
 ) -> BuilderResult<()> {
     let mut blob: Vec<u8> = Vec::new();
