@@ -25,6 +25,34 @@ impl OCIBuilder {
     pub fn commit(&self, container: &str, name: Option<String>) -> BuilderResult<digest::Digest> {
         self.lock()?;
 
+        // check image with same name exists
+        let new_commit_image_name = name.clone().unwrap_or_default();
+
+        if !new_commit_image_name.is_empty() {
+            let new_commit_image_ref: Reference = match new_commit_image_name.parse() {
+                Ok(img_ref) => img_ref,
+                Err(err) => {
+                    return Err(BuilderError::InvalidImageName(
+                        new_commit_image_name.to_string(),
+                        err,
+                    ))
+                }
+            };
+
+            debug!("image reference: {:?}", new_commit_image_ref);
+
+            match self.image_store().image_digest(&new_commit_image_name) {
+                Ok(dg) => {
+                    debug!("image reference digest: {:?}", dg);
+
+                    if !dg.encoded.is_empty() {
+                        return Err(BuilderError::ImageWithSameName(new_commit_image_name));
+                    }
+                }
+                Err(_err) => {}
+            }
+        }
+
         let cnt = self.container_store().container_exist(container)?;
         let cnt_id = self.container_store().container_digest(container)?;
         let top_layer = cnt.top_layer();
@@ -165,6 +193,8 @@ impl OCIBuilder {
                     layer_type = manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE.to_string()
                 } else if layer.media_type == manifest::IMAGE_DOCKER_LAYER_TAR_MEDIA_TYPE {
                     layer_type = manifest::IMAGE_LAYER_MEDIA_TYPE.to_string()
+                } else if layer.media_type == manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE {
+                    layer_type = manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE.to_string()
                 } else {
                     warn!("unknown layer type: {}", layer.media_type);
                 }

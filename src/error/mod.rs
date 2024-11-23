@@ -82,6 +82,9 @@ pub enum BuilderError {
     #[error("invalid image name {0}: {1}")]
     InvalidImageName(String, ParseError),
 
+    #[error("Image with same name found: {0}")]
+    ImageWithSameName(String),
+
     #[error("invalid image reference: {0}")]
     InvalidImageReference(String),
 
