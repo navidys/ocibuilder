@@ -1,7 +1,9 @@
 # ocibuilder
 OCI (Open Container Initiative) image builder written in Rust.
 
-OCIBuilder is using [yuki](https://github.com/youki-dev/youki) runtime library within ocibuilder at moment.
+OCIBuilder is using:
+* [yuki](https://github.com/youki-dev/youki) runtime library within ocibuilder at moment.
+* [rust-oci-client](https://github.com/oras-project/rust-oci-client) implements the OCI distribution specifictiion.
 
 The project is under development and not ready for usage (feel free to contribute).
 
@@ -40,12 +42,12 @@ make
 ## Example
 
 ```shell
-ctr1=$(ocibuilder from "${1:-quay.io/quay/busybox:latest}" | tail -1)
-ocibuilder config --author navid --user apache $ctr1
-ocibuilder config --port 4444/tcp $ctr1
-ocibuilder run $ctr1 touch ocibuilder.txt
-ocibuilder commit $ctr1
-ocibuilder save -o /tmp/new_image.tar $ctr1
+cntr=$(ocibuilder from "${1:-quay.io/quay/busybox:latest}" | tail -1)
+ocibuilder config --author navid --working-dir /tmp $cntr
+ocibuilder config --label "owner=ocibuilder" $cntr
+ocibuilder run $cntr touch ocibuilder.txt
+ocibuilder commit $cntr quay.io/ocibuilder/ocibuilder-test:latest
+ocibuilder save -o /tmp/new_image.tar quay.io/ocibuilder/ocibuilder-test:latest
 
 # Load the save image via podman
 podman image load -i /tmp/new_image.tar

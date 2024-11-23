@@ -1,7 +1,7 @@
 use std::sync::mpsc;
 use std::{thread, time::Duration};
 
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use indicatif::{DecimalBytes, MultiProgress, ProgressBar, ProgressStyle};
 use log::{debug, error};
 use oci_client::{manifest::OciDescriptor, Client, Reference};
 
@@ -57,31 +57,30 @@ impl OCIBuilder {
 
         for layer in &manifest.layers {
             let layer_digest = utils::digest::Digest::new(&layer.digest)?;
+            let layer_size = DecimalBytes(u64::try_from(layer.size).unwrap_or_default());
+
             let (tx, rx) = mpsc::channel();
 
             let spinner_bar = ProgressBar::new_spinner();
             let mspinner_bar = m.clone().add(spinner_bar);
-            let style = match ProgressStyle::with_template("Copying blob {msg} {spinner:.yellow}") {
+            let style_message = format!(
+                "Copying blob {:.12} {{msg}} {{prefix:.bold}}{{spinner:.yellow}}",
+                layer_digest.encoded,
+            );
+            let style = match ProgressStyle::with_template(&style_message) {
                 Ok(st) => st,
                 Err(err) => return Err(BuilderError::TerminalMultiProgressError(err.to_string())),
             };
 
-            let layer_size = layer.size;
             mspinner_bar.enable_steady_tick(Duration::from_millis(100));
             mspinner_bar.set_style(style.clone());
-            mspinner_bar.set_message(format!(
-                "{:.12} {} bytes in progress",
-                layer_digest.encoded, layer_size
-            ));
+            mspinner_bar.set_message(format!("{} in progress", layer_size));
             threads.push(thread::spawn(move || loop {
                 match rx.recv() {
                     Ok(_) => {
                         mspinner_bar.enable_steady_tick(Duration::from_millis(100));
                         mspinner_bar.set_style(style.clone());
-                        mspinner_bar.set_message(format!(
-                            "{:.12} {} bytes in progress",
-                            layer_digest.encoded, layer_size
-                        ));
+                        mspinner_bar.set_message(format!("{} in progress", layer_size));
                         thread::sleep(
                             rand::thread_rng()
                                 .gen_range(Duration::from_secs(1)..Duration::from_secs(5)),
@@ -89,8 +88,7 @@ impl OCIBuilder {
                     }
                     Err(err) => {
                         debug!("spinner rx received: {:?}", err);
-                        mspinner_bar
-                            .finish_with_message(format!("{:.12} done", layer_digest.encoded));
+                        mspinner_bar.finish_with_message("done");
                         break;
                     }
                 }
