@@ -65,16 +65,23 @@ impl OCIBuilder {
                 Ok(st) => st,
                 Err(err) => return Err(BuilderError::TerminalMultiProgressError(err.to_string())),
             };
+
+            let layer_size = layer.size;
             mspinner_bar.enable_steady_tick(Duration::from_millis(100));
             mspinner_bar.set_style(style.clone());
-            mspinner_bar.set_message(format!("{:.12} in progress", layer_digest.encoded));
+            mspinner_bar.set_message(format!(
+                "{:.12} {} bytes in progress",
+                layer_digest.encoded, layer_size
+            ));
             threads.push(thread::spawn(move || loop {
                 match rx.recv() {
                     Ok(_) => {
                         mspinner_bar.enable_steady_tick(Duration::from_millis(100));
                         mspinner_bar.set_style(style.clone());
-                        mspinner_bar
-                            .set_message(format!("{:.12} in progress", layer_digest.encoded));
+                        mspinner_bar.set_message(format!(
+                            "{:.12} {} bytes in progress",
+                            layer_digest.encoded, layer_size
+                        ));
                         thread::sleep(
                             rand::thread_rng()
                                 .gen_range(Duration::from_secs(1)..Duration::from_secs(5)),
