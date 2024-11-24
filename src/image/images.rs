@@ -1,5 +1,6 @@
 use std::{fs::File, path::PathBuf};
 
+use chrono::{DateTime, Utc};
 use log::debug;
 use oci_client::Reference;
 use serde::{Deserialize, Serialize};
@@ -19,6 +20,8 @@ pub struct Image {
     repository: String,
     tag: String,
     id: String,
+    size: i64,
+    created: DateTime<Utc>,
 }
 
 impl Image {
@@ -32,6 +35,14 @@ impl Image {
 
     pub fn id(&self) -> String {
         self.id.clone()
+    }
+
+    pub fn size(&self) -> i64 {
+        self.size
+    }
+
+    pub fn created(&self) -> DateTime<Utc> {
+        self.created
     }
 }
 
@@ -107,7 +118,13 @@ impl ImageStore {
         Err(BuilderError::ImageNotFound(img_digest.to_string()))
     }
 
-    pub fn write_images(&self, img_ref: &Reference, dg: &digest::Digest) -> BuilderResult<()> {
+    pub fn write_images(
+        &self,
+        img_ref: &Reference,
+        dg: &digest::Digest,
+        size: &i64,
+        created: &DateTime<Utc>,
+    ) -> BuilderResult<()> {
         debug!("write images: {}", dg);
 
         let mut images = self.images()?;
@@ -118,6 +135,8 @@ impl ImageStore {
             repository: img_repo,
             tag: img_ref.tag().unwrap_or_default().to_string(),
             id: dg.encoded.to_owned(),
+            size: size.to_owned(),
+            created: created.to_owned(),
         });
 
         let images_path = self.images_path();
