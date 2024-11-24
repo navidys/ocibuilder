@@ -40,16 +40,9 @@ impl OCIBuilder {
         let client_config = dist_client::build_client_config(insecure)?;
         let client = Client::new(client_config);
 
-        match client.pull_manifest_and_config(&reference, &auth).await {
-            Ok((_, _, _)) => {
-                return Err(BuilderError::RegistryError(
-                    "manifest already exist".to_string(),
-                ))
-            }
-            Err(err) => {
-                debug!("{}", err.to_string())
-            }
-        };
+        client
+            .store_auth_if_needed(reference.resolve_registry(), &auth)
+            .await;
 
         let m: MultiProgress = MultiProgress::new();
         let mut push_handlers: Vec<tokio::task::JoinHandle<Result<(), BuilderError>>> = Vec::new();

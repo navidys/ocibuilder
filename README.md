@@ -46,9 +46,9 @@ cntr=$(ocibuilder from "${1:-quay.io/quay/busybox:latest}" | tail -1)
 ocibuilder config --author navid --working-dir /tmp $cntr
 ocibuilder config --label "owner=ocibuilder" $cntr
 ocibuilder run $cntr touch ocibuilder.txt
-ocibuilder commit $cntr quay.io/ocibuilder/ocibuilder-test:latest
-ocibuilder push quay.io/ocibuilder/ocibuilder-test:latest quay.io/ocibuilder/ocibuilder-test:latest
-ocibuilder save -o /tmp/new_image.tar quay.io/ocibuilder/ocibuilder-test:latest
+ocibuilder commit $cntr quay.io/navidys/ocibuilder-test:develop
+ocibuilder push quay.io/navidys/ocibuilder-test:develop quay.io/navidys/ocibuilder-test:develop
+ocibuilder save -o /tmp/new_image.tar quay.io/navidys/ocibuilder-test:develop
 
 # Load the save image via podman
 podman image load -i /tmp/new_image.tar
