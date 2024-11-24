@@ -10,7 +10,13 @@ use crate::{
 use super::oci::OCIBuilder;
 
 impl OCIBuilder {
-    pub async fn from(&self, img_name: &str, name: Option<String>) -> BuilderResult<String> {
+    pub async fn from(
+        &self,
+        img_name: &str,
+        name: Option<String>,
+        insecure: &bool,
+        anonymous: &bool,
+    ) -> BuilderResult<String> {
         self.lock()?;
         let mut cnt_name = name.unwrap_or_default();
 
@@ -35,7 +41,7 @@ impl OCIBuilder {
 
             let img_digest = match img_exist_digest {
                 Some(dg) => dg,
-                None => self.pull(img_name, &false).await?,
+                None => self.pull(img_name, insecure, anonymous).await?,
             };
 
             debug!("container from image: {}", img_digest);

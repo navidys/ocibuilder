@@ -47,6 +47,7 @@ ocibuilder config --author navid --working-dir /tmp $cntr
 ocibuilder config --label "owner=ocibuilder" $cntr
 ocibuilder run $cntr touch ocibuilder.txt
 ocibuilder commit $cntr quay.io/ocibuilder/ocibuilder-test:latest
+ocibuilder push quay.io/ocibuilder/ocibuilder-test:latest quay.io/ocibuilder/ocibuilder-test:latest
 ocibuilder save -o /tmp/new_image.tar quay.io/ocibuilder/ocibuilder-test:latest
 
 # Load the save image via podman
@@ -66,6 +67,7 @@ podman image load -i /tmp/new_image.tar
 | mount      | Mounts a working container's root filesystem for manipulation.
 | umount     | Unmounts the root file system of the specified working containers.
 | pull       | Pull an image from the specified registry.
+| push       | Pushes an image to a specified registry location.
 | reset      | Reset local storage.
 | rm         | Remove one or more working containers.
 | rmi        | Remove one or more images from local storage.

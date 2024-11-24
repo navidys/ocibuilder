@@ -17,7 +17,12 @@ use rand::Rng;
 use super::oci::OCIBuilder;
 
 impl OCIBuilder {
-    pub async fn pull(&self, image_name: &str, insecure: &bool) -> BuilderResult<digest::Digest> {
+    pub async fn pull(
+        &self,
+        image_name: &str,
+        insecure: &bool,
+        anonymous: &bool,
+    ) -> BuilderResult<digest::Digest> {
         self.lock()?;
 
         let reference: Reference = match image_name.parse() {
@@ -35,7 +40,7 @@ impl OCIBuilder {
             }
         }
 
-        let auth = dist_client::build_auth(&reference, true)?;
+        let auth = dist_client::build_auth(&reference, anonymous)?;
         let client_config = dist_client::build_client_config(insecure)?;
 
         let client = Client::new(client_config);

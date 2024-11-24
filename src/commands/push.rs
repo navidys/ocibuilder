@@ -1,48 +1,49 @@
 use std::ffi::OsString;
 
 use clap::Parser;
+use log::debug;
 
 use crate::{builder, error::BuilderResult, utils};
 
 #[derive(Parser, Debug)]
-pub struct From {
-    // image name or ID
+pub struct Push {
+    /// image name
     image: String,
-    /// container name
-    #[clap(short, long)]
-    name: Option<String>,
+    /// registry destination
+    destination: String,
     /// Using http insecure connection instead of https
     #[clap(short, long)]
     insecure: bool,
+
     /// Using anonymous credential for registry
     #[clap(short, long)]
     anonymous: bool,
 }
 
-impl From {
-    pub fn new(image: String, name: Option<String>, insecure: bool, anonymous: bool) -> Self {
+impl Push {
+    pub fn new(image: String, destination: String, insecure: bool, anonymous: bool) -> Self {
         Self {
             image,
-            name,
+            destination,
             insecure,
             anonymous,
         }
     }
 
     pub async fn exec(&self, root_dir: Option<OsString>) -> BuilderResult<()> {
+        debug!("pushing image {} ...", self.image);
+
         let root_dir_path = utils::get_root_dir(root_dir);
         let builder = builder::oci::OCIBuilder::new(root_dir_path)?;
 
-        let cnt_name = builder
-            .from(
+        builder
+            .push(
                 &self.image,
-                self.name.clone(),
+                &self.destination,
                 &self.insecure,
                 &self.anonymous,
             )
             .await?;
-
-        println!("{}", cnt_name);
 
         Ok(())
     }
