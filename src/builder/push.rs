@@ -39,7 +39,10 @@ impl OCIBuilder {
         let auth = dist_client::build_auth(&reference, anonymous)?;
         let client_config = dist_client::build_client_config(insecure)?;
         let client = Client::new(client_config);
-        client.store_auth_if_needed(reference.resolve_registry(), &auth).await;
+
+        client
+            .store_auth_if_needed(reference.resolve_registry(), &auth)
+            .await;
 
         let m: MultiProgress = MultiProgress::new();
         let mut push_handlers: Vec<tokio::task::JoinHandle<Result<(), BuilderError>>> = Vec::new();
