@@ -25,6 +25,7 @@ impl LayerStore {
             &self.overlay_diff_path(dg),
             &self.overlay_rootfs_path(dg),
             &self.overlay_work_path(dg),
+            &self.overlay_tmp_path(dg),
         ];
 
         for dir_path in overlays_subdir {
