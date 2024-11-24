@@ -62,6 +62,7 @@ podman image load -i /tmp/new_image.tar
 | containers | List the working containers and their base images.
 | from       | Creates a new working container either from scratch or using an image.
 | images     | List images in local storage.
+| inspect    | Inspects a build container's or built image's configuration.
 | mount      | Mounts a working container's root filesystem for manipulation.
 | umount     | Unmounts the root file system of the specified working containers.
 | pull       | Pull an image from the specified registry.

@@ -51,6 +51,9 @@ pub enum BuilderError {
     #[error("spawn: {0}")]
     SpawnError(String),
 
+    #[error("image or container name/id not found: {0}")]
+    ContainerOrImageNotFound(String),
+
     // yuki error
     #[error("yuki error: {0}")]
     YukiError(String),
