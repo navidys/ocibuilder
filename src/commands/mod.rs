@@ -6,6 +6,7 @@ pub mod images;
 pub mod inspect;
 pub mod mount;
 pub mod pull;
+pub mod push;
 pub mod reset;
 pub mod rm;
 pub mod rmi;

@@ -2,8 +2,8 @@ use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
 use ocibuilder::commands::{
-    commit, config, containers, from, images, inspect, mount, pull, reset, rm, rmi, run, save,
-    umount,
+    commit, config, containers, from, images, inspect, mount, pull, push, reset, rm, rmi, run,
+    save, umount,
 };
 
 #[derive(Parser, Debug)]
@@ -42,6 +42,9 @@ enum SubCommand {
     /// Pull an image from specified registry
     Pull(pull::Pull),
 
+    /// Pushes an image to a specified registry location
+    Push(push::Push),
+
     /// Reset local storage
     Reset(reset::Reset),
 
@@ -78,6 +81,7 @@ async fn main() {
         SubCommand::Inspect(inspect) => inspect.exec(root_dir),
         SubCommand::Images(images) => images.exec(root_dir),
         SubCommand::Containers(containers) => containers.exec(root_dir),
+        SubCommand::Push(push) => push.exec(root_dir).await,
         SubCommand::Pull(pull) => pull.exec(root_dir).await,
         SubCommand::Rm(rm) => rm.exec(root_dir),
         SubCommand::Rmi(rmi) => rmi.exec(root_dir),

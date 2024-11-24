@@ -24,6 +24,12 @@ pub enum BuilderError {
     ArchiveError(String),
 
     // general builder errors
+    #[error("credential error: {0}")]
+    CredentialError(String),
+
+    #[error("registry error: {0}")]
+    RegistryError(String),
+
     #[error("response error: {0}")]
     ResponseError(String),
 

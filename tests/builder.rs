@@ -12,7 +12,7 @@ mod tests {
 
         let image_name = "quay.io/quay/busybox:latest";
         builder
-            .pull(image_name, &false)
+            .pull(image_name, &false, &true)
             .await
             .expect("image to be pulled");
 
@@ -42,7 +42,7 @@ mod tests {
         let image_name: &str = "docker.io/library/httpd:latest";
         let container_name = "oci_builder_test_rmi";
         builder
-            .from(image_name, Some(container_name.to_string()))
+            .from(image_name, Some(container_name.to_string()), &false, &true)
             .await
             .expect("container from an image");
 
@@ -81,7 +81,7 @@ mod tests {
         let image_name: &str = "scratch";
         let container_name = "oci_builder_test_from_scratch";
         builder
-            .from(image_name, Some(container_name.to_string()))
+            .from(image_name, Some(container_name.to_string()), &false, &true)
             .await
             .expect("container from scratch");
 
@@ -114,7 +114,7 @@ mod tests {
         let image_name: &str = "quay.io/quay/busybox:latest";
         let container_name = "oci_builder_test_from";
         builder
-            .from(image_name, Some(container_name.to_string()))
+            .from(image_name, Some(container_name.to_string()), &false, &true)
             .await
             .expect("container from an image");
 
@@ -147,7 +147,7 @@ mod tests {
         let image_name: &str = "quay.io/quay/busybox:latest";
         let container_name = "oci_builder_test_rm";
         builder
-            .from(image_name, Some(container_name.to_string()))
+            .from(image_name, Some(container_name.to_string()), &false, &true)
             .await
             .expect("container from an image");
 
