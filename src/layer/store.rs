@@ -69,4 +69,11 @@ impl LayerStore {
         work_path.push("work");
         work_path
     }
+
+    pub fn overlay_tmp_path(&self, dg: &digest::Digest) -> PathBuf {
+        let mut work_path = self.overlay_path.clone();
+        work_path.push(&dg.encoded);
+        work_path.push("tmp");
+        work_path
+    }
 }

@@ -40,6 +40,8 @@ impl OCIBuilder {
             upperdir_path
         );
 
+        let tmp_path = self.layer_store().overlay_tmp_path(&top_layer_digest);
+
         let mut lowerdir_paths: Vec<String> = Vec::new();
 
         for layer in cnt.rootfs_diff() {
@@ -66,7 +68,7 @@ impl OCIBuilder {
         if lowerdir_paths.is_empty() {
             mount_options = format!(
                 "lowerdir={},upperdir={},workdir={}",
-                upperdir_path.display(),
+                tmp_path.display(),
                 upperdir_path.display(),
                 workdir_path.display(),
             );
@@ -79,7 +81,7 @@ impl OCIBuilder {
         );
 
         if nix::unistd::geteuid().as_raw() != 0 {
-            mount_rootless(&mount_point, lowerdir_paths, &upperdir_path, &workdir_path)?
+            mount_rootless(&mount_point, &mount_options)?
         } else {
             mount(&mount_point, &mount_options)?;
         }
@@ -160,31 +162,10 @@ fn umount(mount_point: &Path) -> BuilderResult<()> {
     }
 }
 
-fn mount_rootless(
-    mount_point: &Path,
-    lower_dir: Vec<String>,
-    upper_dir: &Path,
-    work_dir: &Path,
-) -> BuilderResult<()> {
-    let mut cmd_options = String::new();
-    for ldir in lower_dir {
-        if cmd_options.is_empty() {
-            cmd_options = format!("lowerdir={}", ldir)
-        } else {
-            cmd_options = format!("{}:{}", cmd_options, ldir)
-        }
-    }
-
-    cmd_options = format!(
-        "{},upperdir={},workdir={}",
-        cmd_options,
-        upper_dir.display(),
-        work_dir.display(),
-    );
-
+fn mount_rootless(mount_point: &Path, mount_options: &str) -> BuilderResult<()> {
     match Command::new("/usr/bin/fuse-overlayfs")
         .arg("-o")
-        .arg(cmd_options)
+        .arg(mount_options)
         .arg(mount_point.display().to_string())
         .output()
     {
