@@ -2,7 +2,8 @@ use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
 use ocibuilder::commands::{
-    commit, config, containers, from, images, mount, pull, reset, rm, rmi, run, save, umount,
+    commit, config, containers, from, images, inspect, mount, pull, reset, rm, rmi, run, save,
+    umount,
 };
 
 #[derive(Parser, Debug)]
@@ -31,6 +32,9 @@ enum SubCommand {
 
     /// List images in local storage
     Images(images::Images),
+
+    /// Inspects a build container's or built image's configuration.
+    Inspect(inspect::Inspect),
 
     /// List container in local storage
     Containers(containers::Containers),
@@ -71,6 +75,7 @@ async fn main() {
         SubCommand::Commit(commit) => commit.exec(root_dir),
         SubCommand::Config(config) => config.exec(root_dir),
         SubCommand::From(from) => from.exec(root_dir).await,
+        SubCommand::Inspect(inspect) => inspect.exec(root_dir),
         SubCommand::Images(images) => images.exec(root_dir),
         SubCommand::Containers(containers) => containers.exec(root_dir),
         SubCommand::Pull(pull) => pull.exec(root_dir).await,
