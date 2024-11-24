@@ -56,12 +56,21 @@ impl OCIBuilder {
             self.umount(container)?;
         }
 
-        let mount_options = format!(
+        let mut mount_options = format!(
             "lowerdir={},upperdir={},workdir={}",
             lowerdir_paths.join(":"),
             upperdir_path.display(),
             workdir_path.display(),
         );
+
+        if lowerdir_paths.is_empty() {
+            mount_options = format!(
+                "lowerdir={},upperdir={},workdir={}",
+                upperdir_path.display(),
+                upperdir_path.display(),
+                workdir_path.display(),
+            );
+        }
 
         debug!(
             "container {:.12} mount options: {:?}",

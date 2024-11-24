@@ -152,8 +152,17 @@ impl OCIBuilder {
         let new_image_reference = self.new_image_reference(name, &new_image_id_digest)?;
 
         // overlay-images 6- update images.json
-        self.image_store()
-            .write_images(&new_image_reference, &new_image_id_digest)?;
+        let mut image_size = self.calculate_image_layers_size(new_image_manifest.layers)?;
+        image_size += new_image_manifest.config.size;
+
+        let image_config = self.image_store().get_config(&new_image_id_digest)?;
+
+        self.image_store().write_images(
+            &new_image_reference,
+            &new_image_id_digest,
+            &image_size,
+            &image_config.created.unwrap_or_default(),
+        )?;
 
         // remove tmp content
         if layer_archive_path.is_file() {

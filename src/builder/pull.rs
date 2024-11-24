@@ -54,11 +54,11 @@ impl OCIBuilder {
 
         let mut pull_handlers: Vec<tokio::task::JoinHandle<Result<(), BuilderError>>> = Vec::new();
         let mut threads = vec![];
-        let mut layer_oci_manifest = manifest.clone();
-        let mut layer_oci_disctriptor = Vec::new();
+        let mut image_oci_manifest = manifest.clone();
+        let mut image_oci_disctriptor = Vec::new();
 
         for layer in &manifest.layers {
-            layer_oci_disctriptor.push(manifest::OciDescriptor {
+            image_oci_disctriptor.push(manifest::OciDescriptor {
                 media_type: manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE.to_string(),
                 digest: layer.digest.clone(),
                 size: layer.size,
@@ -136,9 +136,9 @@ impl OCIBuilder {
             }
         }
 
-        layer_oci_manifest.layers = layer_oci_disctriptor;
+        image_oci_manifest.layers = image_oci_disctriptor;
 
-        for layer in &layer_oci_manifest.layers {
+        for layer in &image_oci_manifest.layers {
             debug!("adding layers to layerstore");
 
             self.layer_store().add_layer_desc(layer)?;
@@ -151,10 +151,20 @@ impl OCIBuilder {
         // write image manifest
         println!("Writing manifest to image destination");
         self.image_store()
-            .write_manifest(&image_digest, &layer_oci_manifest)?;
+            .write_manifest(&image_digest, &image_oci_manifest)?;
 
         // update images
-        self.image_store().write_images(&reference, &image_digest)?;
+        let mut image_size = self.calculate_image_layers_size(image_oci_manifest.layers)?;
+        image_size += image_oci_manifest.config.size;
+
+        let image_config = self.image_store().get_config(&image_digest)?;
+
+        self.image_store().write_images(
+            &reference,
+            &image_digest,
+            &image_size,
+            &image_config.created.unwrap_or_default(),
+        )?;
 
         self.unlock()?;
 

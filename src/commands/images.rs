@@ -1,7 +1,9 @@
-use std::ffi::OsString;
 use std::io::Write;
+use std::{ffi::OsString, time::Duration};
 
+use chrono::Local;
 use clap::Parser;
+use indicatif::{DecimalBytes, HumanDuration};
 use oci_client::Reference;
 use tabwriter::TabWriter;
 
@@ -38,11 +40,23 @@ impl Images {
         }
 
         let mut tw = TabWriter::new(std::io::stdout());
-        let mut output = "REPOSITORY\tTAG\tIMAGE ID\n".to_string();
+        let mut output = "REPOSITORY\tTAG\tIMAGE ID\tCREATED\tSIZE\n".to_string();
 
         for img in images {
+            let image_size = DecimalBytes(u64::try_from(img.size()).unwrap_or_default());
+            let created_time: chrono::DateTime<chrono::Utc> = img.created().to_utc();
+            let current_time = Local::now();
+            let diff_time = current_time.signed_duration_since(created_time);
+            let diff_time_seconds = u64::from_ne_bytes(diff_time.num_seconds().to_ne_bytes());
+            let image_created = HumanDuration(Duration::new(diff_time_seconds, 0));
             if img.repository() == "/" && img.tag().is_empty() {
-                output = format!("{}<none>\t<none>\t{:.12}\n", output, img.id());
+                output = format!(
+                    "{}<none>\t<none>\t{:.12}\t{} ago\t{}\n",
+                    output,
+                    img.id(),
+                    image_created,
+                    image_size,
+                );
             } else {
                 let img_ref = format!("{}:{}", img.repository(), img.tag());
                 let reference: Reference = match img_ref.parse() {
@@ -50,7 +64,15 @@ impl Images {
                     Err(err) => return Err(BuilderError::InvalidImageName(img_ref, err)),
                 };
                 let img_name = format!("{}/{}", reference.registry(), reference.repository());
-                output = format!("{}{}\t{}\t{:.12}\n", output, img_name, img.tag(), img.id());
+                output = format!(
+                    "{}{}\t{}\t{:.12}\t{} ago\t{}\n",
+                    output,
+                    img_name,
+                    img.tag(),
+                    img.id(),
+                    image_created,
+                    image_size,
+                );
             }
         }
 
