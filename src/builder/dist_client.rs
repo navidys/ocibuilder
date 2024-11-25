@@ -2,7 +2,7 @@ use docker_credential::{CredentialRetrievalError, DockerCredential};
 use log::{debug, warn};
 use oci_client::{client, secrets::RegistryAuth, Reference};
 
-use crate::error::{BuilderError, BuilderResult};
+use crate::error::BuilderResult;
 
 pub fn build_auth(reference: &Reference, anon: &bool) -> BuilderResult<RegistryAuth> {
     if anon.to_owned() {
@@ -18,7 +18,10 @@ pub fn build_auth(reference: &Reference, anon: &bool) -> BuilderResult<RegistryA
             debug!("no credential found, using anonymous");
             Ok(RegistryAuth::Anonymous)
         }
-        Err(e) => Err(BuilderError::CredentialError(e.to_string())),
+        Err(e) => {
+            warn!("credential retrieval: {}", e.to_string());
+            Ok(RegistryAuth::Anonymous)
+        }
         Ok(DockerCredential::UsernamePassword(username, password)) => {
             debug!("found login username/password credentials");
             Ok(RegistryAuth::Basic(username, password))

@@ -80,7 +80,9 @@ impl ContainerStore {
 }
 
 fn get_default_config() -> Result<Spec> {
-    Ok(Spec::default())
+    let spec = Spec::default();
+
+    Ok(spec)
 }
 
 fn get_rootless_config() -> Result<Spec> {
