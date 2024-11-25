@@ -80,7 +80,52 @@ impl ContainerStore {
 }
 
 fn get_default_config() -> Result<Spec> {
-    Ok(Spec::default())
+    let mut spec = Spec::default();
+    let mut spec_process = spec.process().clone().unwrap_or_default();
+    let mut spec_process_cap = spec_process.capabilities().clone().unwrap_or_default();
+
+    let mut psec_effective = spec_process
+        .capabilities()
+        .clone()
+        .unwrap_or_default()
+        .effective()
+        .clone()
+        .unwrap_or_default();
+    psec_effective.insert(libcontainer::oci_spec::runtime::Capability::Chown);
+    psec_effective.insert(libcontainer::oci_spec::runtime::Capability::DacOverride);
+    psec_effective.insert(libcontainer::oci_spec::runtime::Capability::Fowner);
+    psec_effective.insert(libcontainer::oci_spec::runtime::Capability::Fsetid);
+    psec_effective.insert(libcontainer::oci_spec::runtime::Capability::Setfcap);
+    psec_effective.insert(libcontainer::oci_spec::runtime::Capability::Setgid);
+    psec_effective.insert(libcontainer::oci_spec::runtime::Capability::Setpcap);
+    psec_effective.insert(libcontainer::oci_spec::runtime::Capability::Setuid);
+    psec_effective.insert(libcontainer::oci_spec::runtime::Capability::SysChroot);
+
+    let mut psec_bounding = spec_process
+        .capabilities()
+        .clone()
+        .unwrap_or_default()
+        .bounding()
+        .clone()
+        .unwrap_or_default();
+    psec_bounding.insert(libcontainer::oci_spec::runtime::Capability::Chown);
+    psec_bounding.insert(libcontainer::oci_spec::runtime::Capability::DacOverride);
+    psec_bounding.insert(libcontainer::oci_spec::runtime::Capability::Fowner);
+    psec_bounding.insert(libcontainer::oci_spec::runtime::Capability::Fsetid);
+    psec_bounding.insert(libcontainer::oci_spec::runtime::Capability::Setfcap);
+    psec_bounding.insert(libcontainer::oci_spec::runtime::Capability::Setgid);
+    psec_bounding.insert(libcontainer::oci_spec::runtime::Capability::Setpcap);
+    psec_bounding.insert(libcontainer::oci_spec::runtime::Capability::Setuid);
+    psec_bounding.insert(libcontainer::oci_spec::runtime::Capability::SysChroot);
+
+    spec_process_cap.set_bounding(Some(psec_bounding));
+    spec_process_cap.set_effective(Some(psec_effective));
+
+    spec_process.set_capabilities(Some(spec_process_cap));
+
+    spec.set_process(Some(spec_process));
+
+    Ok(spec)
 }
 
 fn get_rootless_config() -> Result<Spec> {
