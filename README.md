@@ -1,11 +1,11 @@
 # ocibuilder
 OCI (Open Container Initiative) image builder written in Rust.
 
+The project is under development and not ready for usage (feel free to contribute).
+
 OCIBuilder is using:
 * [yuki](https://github.com/youki-dev/youki) runtime library within ocibuilder at moment.
 * [rust-oci-client](https://github.com/oras-project/rust-oci-client) implements the OCI distribution specifictiion.
-
-The project is under development and not ready for usage (feel free to contribute).
 
 ## Requires
 
@@ -61,6 +61,7 @@ podman image load -i /tmp/new_image.tar
 | commit     | Creates an image from a working container.
 | config     | Update image configuration settings.
 | containers | List the working containers and their base images.
+| copy       | Copy content into the container.
 | from       | Creates a new working container either from scratch or using an image.
 | images     | List images in local storage.
 | inspect    | Inspects a build container's or built image's configuration.

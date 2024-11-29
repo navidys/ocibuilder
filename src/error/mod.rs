@@ -60,6 +60,9 @@ pub enum BuilderError {
     #[error("image or container name/id not found: {0}")]
     ContainerOrImageNotFound(String),
 
+    #[error("copy error: {0}")]
+    CopyError(String),
+
     // yuki error
     #[error("yuki error: {0}")]
     YukiError(String),

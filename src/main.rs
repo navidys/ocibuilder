@@ -2,8 +2,8 @@ use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
 use ocibuilder::commands::{
-    commit, config, containers, from, images, inspect, mount, pull, push, reset, rm, rmi, run,
-    save, umount,
+    commit, config, containers, copy, from, images, inspect, mount, pull, push, reset, rm, rmi,
+    run, save, umount,
 };
 
 #[derive(Parser, Debug)]
@@ -26,6 +26,9 @@ enum SubCommand {
 
     /// Modifies the configuration values which will be saved to the image.
     Config(config::Config),
+
+    /// Copies the contents of a file or directory into a container's working directory.
+    Copy(copy::Copy),
 
     /// Start a new build from a new and empty image or an existing image
     From(from::From),
@@ -77,6 +80,7 @@ async fn main() {
     let result = match opts.subcmd {
         SubCommand::Commit(commit) => commit.exec(root_dir),
         SubCommand::Config(config) => config.exec(root_dir),
+        SubCommand::Copy(copy) => copy.exec(root_dir),
         SubCommand::From(from) => from.exec(root_dir).await,
         SubCommand::Inspect(inspect) => inspect.exec(root_dir),
         SubCommand::Images(images) => images.exec(root_dir),

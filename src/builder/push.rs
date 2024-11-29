@@ -58,7 +58,7 @@ impl OCIBuilder {
             let spinner_bar = ProgressBar::new_spinner();
             let mspinner_bar = m.clone().add(spinner_bar);
             let style_message = format!(
-                "Pushing blob {:.12} {{msg}} {{prefix:.bold}}{{spinner:.yellow}}",
+                "Pushing blob {:.12} {{msg}} {{prefix:.bold}}{{spinner:.white}}",
                 layer_digest.encoded,
             );
             let style = match ProgressStyle::with_template(&style_message) {

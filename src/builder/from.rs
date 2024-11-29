@@ -61,7 +61,7 @@ impl OCIBuilder {
                 img_layers.push(layer.digest);
             }
 
-            let layer_digest = utils::new_digest_id()?;
+            let layer_digest = utils::common::new_digest_id()?;
             debug!("container top layer: {}", layer_digest);
 
             self.layer_store().create_layer_overlay_dir(&layer_digest)?;
@@ -95,7 +95,7 @@ impl OCIBuilder {
             self.container_store()
                 .write_builder_config(&cnt_id, &img_config)?;
         } else {
-            let layer_digest = utils::new_digest_id()?;
+            let layer_digest = utils::common::new_digest_id()?;
             debug!("container top layer: {}", layer_digest);
             self.layer_store().create_layer_overlay_dir(&layer_digest)?;
             if cnt_name.is_empty() {

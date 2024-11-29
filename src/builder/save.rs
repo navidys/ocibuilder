@@ -133,9 +133,9 @@ impl OCIBuilder {
         img_digest: &digest::Digest,
         manifest_path: &Path,
     ) -> BuilderResult<()> {
-        let manifest_digest_str = utils::compute_sha256_hash_of_file(manifest_path)?;
+        let manifest_digest_str = utils::common::compute_sha256_hash_of_file(manifest_path)?;
         let manifest_digest = utils::digest::Digest::new(&manifest_digest_str)?;
-        let manifest_size = utils::file_size(manifest_path)?;
+        let manifest_size = utils::common::file_size(manifest_path)?;
 
         let image = self.image_store().image(img_digest)?;
         let mut index_annotations: BTreeMap<String, String> = BTreeMap::new();
@@ -219,7 +219,8 @@ impl OCIBuilder {
 
     fn write_image_manifest(&self, dest: &Path, dg: &digest::Digest) -> BuilderResult<()> {
         let image_manifest_src_path = self.image_store().manifest_path(dg);
-        let image_manifest_id = utils::compute_sha256_hash_of_file(&image_manifest_src_path)?;
+        let image_manifest_id =
+            utils::common::compute_sha256_hash_of_file(&image_manifest_src_path)?;
         let image_manifest_digest = utils::digest::Digest::new(&image_manifest_id)?;
 
         let mut manifest_output_file = dest.to_path_buf();
