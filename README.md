@@ -58,6 +58,7 @@ podman image load -i /tmp/new_image.tar
 
 | Command    | Description |
 | ---------- | ----------- |
+| add        | Add content to the container.
 | commit     | Creates an image from a working container.
 | config     | Update image configuration settings.
 | containers | List the working containers and their base images.

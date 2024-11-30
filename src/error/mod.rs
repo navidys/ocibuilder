@@ -63,6 +63,9 @@ pub enum BuilderError {
     #[error("copy error: {0}")]
     CopyError(String),
 
+    #[error("add error: {0}")]
+    AddError(String),
+
     // yuki error
     #[error("yuki error: {0}")]
     YukiError(String),

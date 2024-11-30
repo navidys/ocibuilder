@@ -2,8 +2,8 @@ use std::ffi::OsString;
 
 use clap::{Parser, Subcommand};
 use ocibuilder::commands::{
-    commit, config, containers, copy, from, images, inspect, mount, pull, push, reset, rm, rmi,
-    run, save, umount,
+    add, commit, config, containers, copy, from, images, inspect, mount, pull, push, reset, rm,
+    rmi, run, save, umount,
 };
 
 #[derive(Parser, Debug)]
@@ -21,6 +21,9 @@ struct Opts {
 #[allow(clippy::large_enum_variant)]
 #[derive(Subcommand, Debug)]
 enum SubCommand {
+    /// Add the contents of a file, directory or an archive file into a container's working directory.
+    Add(add::Add),
+
     /// Create an image from a working container
     Commit(commit::Commit),
 
@@ -78,6 +81,7 @@ async fn main() {
     let root_dir = opts.root;
 
     let result = match opts.subcmd {
+        SubCommand::Add(add) => add.exec(root_dir),
         SubCommand::Commit(commit) => commit.exec(root_dir),
         SubCommand::Config(config) => config.exec(root_dir),
         SubCommand::Copy(copy) => copy.exec(root_dir),
