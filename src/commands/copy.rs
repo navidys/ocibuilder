@@ -6,6 +6,10 @@ use crate::{builder, error::BuilderResult, utils};
 
 #[derive(Parser, Debug)]
 pub struct Copy {
+    /// Add an entry for this operation to the image's history.
+    #[clap(long, required = false)]
+    pub add_history: bool,
+
     /// container name or ID
     container: String,
 
@@ -17,11 +21,12 @@ pub struct Copy {
 }
 
 impl Copy {
-    pub fn new(container: String, source: String, destination: String) -> Self {
+    pub fn new(container: String, source: String, destination: String, add_history: bool) -> Self {
         Self {
             container,
             source,
             destination,
+            add_history,
         }
     }
 
@@ -29,7 +34,12 @@ impl Copy {
         let root_dir_path = utils::get_root_dir(root_dir);
         let builder = builder::oci::OCIBuilder::new(root_dir_path)?;
 
-        builder.copy(&self.container, &self.source, &self.destination)?;
+        builder.copy(
+            &self.container,
+            &self.source,
+            &self.destination,
+            &self.add_history,
+        )?;
 
         Ok(())
     }

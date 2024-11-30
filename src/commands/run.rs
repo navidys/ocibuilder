@@ -6,6 +6,10 @@ use crate::{builder, error::BuilderResult, utils};
 
 #[derive(Parser, Debug)]
 pub struct Run {
+    /// Add an entry for this operation to the image's history.
+    #[clap(long, required = false)]
+    pub add_history: bool,
+
     /// Path to container runtime directory
     #[clap(short, long)]
     rundir: Option<OsString>,
@@ -27,12 +31,14 @@ impl Run {
         cmd: Vec<String>,
         rundir: Option<OsString>,
         systemd_cgroup: bool,
+        add_history: bool,
     ) -> Self {
         Self {
             container,
             cmd,
             rundir,
             systemd_cgroup,
+            add_history,
         }
     }
 
@@ -45,6 +51,7 @@ impl Run {
             &self.cmd,
             &self.rundir,
             &self.systemd_cgroup,
+            &self.add_history,
         )?;
 
         Ok(())

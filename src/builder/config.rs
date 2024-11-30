@@ -18,43 +18,44 @@ impl OCIBuilder {
         let mut img_cfg = self.container_store().get_builder_config(cnt_id)?;
 
         if cfg.author.is_some() {
-            self.set_author(&mut img_cfg, &cfg.author)?;
+            self.set_author(&mut img_cfg, &cfg.author, cfg.add_history)?;
         }
 
         if cfg.user.is_some() {
-            self.set_user(&mut img_cfg, &cfg.user)?;
+            self.set_user(&mut img_cfg, &cfg.user, cfg.add_history)?;
         }
 
         if cfg.working_dir.is_some() {
-            self.set_working_dir(&mut img_cfg, &cfg.working_dir)?;
+            self.set_working_dir(&mut img_cfg, &cfg.working_dir, cfg.add_history)?;
         }
 
         if cfg.stop_signal.is_some() {
-            self.set_stop_signal(&mut img_cfg, &cfg.stop_signal)?;
+            self.set_stop_signal(&mut img_cfg, &cfg.stop_signal, cfg.add_history)?;
         }
 
         if cfg.created_by.is_some() {
+            // created_by will be part of history so not passing add_history
             self.set_created_by(&mut img_cfg, &cfg.created_by)?;
         }
 
         if cfg.cmd.is_some() {
-            self.set_cmd(&mut img_cfg, &cfg.cmd)?;
+            self.set_cmd(&mut img_cfg, &cfg.cmd, cfg.add_history)?;
         }
 
         if cfg.entrypoint.is_some() {
-            self.set_entrypoint(&mut img_cfg, &cfg.entrypoint)?;
+            self.set_entrypoint(&mut img_cfg, &cfg.entrypoint, cfg.add_history)?;
         }
 
         if cfg.env.is_some() {
-            self.set_env(&mut img_cfg, &cfg.env)?;
+            self.set_env(&mut img_cfg, &cfg.env, cfg.add_history)?;
         }
 
         if cfg.label.is_some() {
-            self.set_label(&mut img_cfg, &cfg.label)?;
+            self.set_label(&mut img_cfg, &cfg.label, cfg.add_history)?;
         }
 
         if cfg.port.is_some() {
-            self.set_port(&mut img_cfg, &cfg.port)?;
+            self.set_port(&mut img_cfg, &cfg.port, cfg.add_history)?;
         }
 
         self.container_store()
@@ -63,7 +64,12 @@ impl OCIBuilder {
         Ok(())
     }
 
-    fn set_port(&self, cfg: &mut ConfigFile, port: &Option<String>) -> BuilderResult<()> {
+    fn set_port(
+        &self,
+        cfg: &mut ConfigFile,
+        port: &Option<String>,
+        add_history: bool,
+    ) -> BuilderResult<()> {
         debug!("set container config port: {:?}", port);
 
         let mut cfg_config = cfg.config.to_owned().unwrap_or_default();
@@ -87,7 +93,7 @@ impl OCIBuilder {
         } else {
             cfg_config.exposed_ports = Some(image_exposed_port);
 
-            if !history_exposed_port.is_empty() {
+            if !history_exposed_port.is_empty() && add_history {
                 let mut img_history = cfg.history.to_owned().unwrap_or_default();
                 let change_history = History {
                     created: Some(chrono::Utc::now()),
@@ -110,7 +116,12 @@ impl OCIBuilder {
         Ok(())
     }
 
-    fn set_label(&self, cfg: &mut ConfigFile, label: &Option<String>) -> BuilderResult<()> {
+    fn set_label(
+        &self,
+        cfg: &mut ConfigFile,
+        label: &Option<String>,
+        add_history: bool,
+    ) -> BuilderResult<()> {
         debug!("set container config label: {:?}", label);
 
         let mut cfg_config = cfg.config.to_owned().unwrap_or_default();
@@ -140,7 +151,7 @@ impl OCIBuilder {
         } else {
             cfg_config.labels = Some(image_labels);
 
-            if !history_label_list.is_empty() {
+            if !history_label_list.is_empty() && add_history {
                 let mut img_history = cfg.history.to_owned().unwrap_or_default();
                 let change_history = History {
                     created: Some(chrono::Utc::now()),
@@ -163,7 +174,12 @@ impl OCIBuilder {
         Ok(())
     }
 
-    fn set_env(&self, cfg: &mut ConfigFile, env: &Option<String>) -> BuilderResult<()> {
+    fn set_env(
+        &self,
+        cfg: &mut ConfigFile,
+        env: &Option<String>,
+        add_history: bool,
+    ) -> BuilderResult<()> {
         debug!("set container config env: {:?}", env);
 
         let mut cfg_config = cfg.config.to_owned().unwrap_or_default();
@@ -197,7 +213,7 @@ impl OCIBuilder {
         } else {
             cfg_config.env = Some(env_list);
 
-            if !history_env_list.is_empty() {
+            if !history_env_list.is_empty() && add_history {
                 let mut img_history = cfg.history.to_owned().unwrap_or_default();
                 let change_history = History {
                     created: Some(chrono::Utc::now()),
@@ -224,6 +240,7 @@ impl OCIBuilder {
         &self,
         cfg: &mut ConfigFile,
         entrypoint: &Option<String>,
+        add_history: bool,
     ) -> BuilderResult<()> {
         debug!("set container config entrypoint: {:?}", entrypoint);
 
@@ -237,26 +254,33 @@ impl OCIBuilder {
             cfg_config.entrypoint = Some(entry_list.to_owned());
             cfg.config = Some(cfg_config);
 
-            let mut img_history = cfg.history.to_owned().unwrap_or_default();
-            let change_history = History {
-                created: Some(chrono::Utc::now()),
-                author: None,
-                created_by: Some(format!(
-                    "/bin/sh -c #(nop) ENTRYPOINT {:?}",
-                    entry_list.to_owned()
-                )),
-                comment: None,
-                empty_layer: Some(true),
-            };
+            if add_history {
+                let mut img_history = cfg.history.to_owned().unwrap_or_default();
+                let change_history = History {
+                    created: Some(chrono::Utc::now()),
+                    author: None,
+                    created_by: Some(format!(
+                        "/bin/sh -c #(nop) ENTRYPOINT {:?}",
+                        entry_list.to_owned()
+                    )),
+                    comment: None,
+                    empty_layer: Some(true),
+                };
 
-            img_history.insert(0, change_history);
-            cfg.history = Some(img_history);
+                img_history.insert(0, change_history);
+                cfg.history = Some(img_history);
+            }
         }
 
         Ok(())
     }
 
-    fn set_cmd(&self, cfg: &mut ConfigFile, cmd: &Option<String>) -> BuilderResult<()> {
+    fn set_cmd(
+        &self,
+        cfg: &mut ConfigFile,
+        cmd: &Option<String>,
+        add_history: bool,
+    ) -> BuilderResult<()> {
         debug!("set container config cmd: {:?}", cmd);
 
         let mut cmd_list: Vec<String> = Vec::new();
@@ -269,11 +293,43 @@ impl OCIBuilder {
             cfg_config.cmd = Some(cmd_list.clone());
             cfg.config = Some(cfg_config);
 
+            if add_history {
+                let mut img_history = cfg.history.to_owned().unwrap_or_default();
+                let change_history = History {
+                    created: Some(chrono::Utc::now()),
+                    author: None,
+                    created_by: Some(format!("/bin/sh -c #(nop) CMD {:?}", cmd_list.to_owned())),
+                    comment: None,
+                    empty_layer: Some(true),
+                };
+
+                img_history.insert(0, change_history);
+                cfg.history = Some(img_history);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn set_author(
+        &self,
+        cfg: &mut ConfigFile,
+        author: &Option<String>,
+        add_history: bool,
+    ) -> BuilderResult<()> {
+        debug!("set container config author: {:?}", author);
+
+        cfg.author = author.to_owned();
+
+        if add_history {
             let mut img_history = cfg.history.to_owned().unwrap_or_default();
             let change_history = History {
                 created: Some(chrono::Utc::now()),
-                author: None,
-                created_by: Some(format!("/bin/sh -c #(nop) CMD {:?}", cmd_list.to_owned())),
+                author: author.to_owned(),
+                created_by: Some(format!(
+                    "/bin/sh -c #(nop) MAINTAINER {}",
+                    author.to_owned().unwrap_or_default()
+                )),
                 comment: None,
                 empty_layer: Some(true),
             };
@@ -285,30 +341,12 @@ impl OCIBuilder {
         Ok(())
     }
 
-    fn set_author(&self, cfg: &mut ConfigFile, author: &Option<String>) -> BuilderResult<()> {
-        debug!("set container config author: {:?}", author);
-
-        cfg.author = author.to_owned();
-
-        let mut img_history = cfg.history.to_owned().unwrap_or_default();
-        let change_history = History {
-            created: Some(chrono::Utc::now()),
-            author: author.to_owned(),
-            created_by: Some(format!(
-                "/bin/sh -c #(nop) MAINTAINER {}",
-                author.to_owned().unwrap_or_default()
-            )),
-            comment: None,
-            empty_layer: Some(true),
-        };
-
-        img_history.insert(0, change_history);
-        cfg.history = Some(img_history);
-
-        Ok(())
-    }
-
-    fn set_user(&self, cfg: &mut ConfigFile, user: &Option<String>) -> BuilderResult<()> {
+    fn set_user(
+        &self,
+        cfg: &mut ConfigFile,
+        user: &Option<String>,
+        add_history: bool,
+    ) -> BuilderResult<()> {
         debug!("set container config user: {:?}", user);
 
         let mut cfg_config = cfg.config.to_owned().unwrap_or_default();
@@ -316,20 +354,22 @@ impl OCIBuilder {
 
         cfg.config = Some(cfg_config);
 
-        let mut img_history = cfg.history.to_owned().unwrap_or_default();
-        let change_history = History {
-            created: Some(chrono::Utc::now()),
-            author: None,
-            created_by: Some(format!(
-                "/bin/sh -c #(nop) USER {}",
-                user.to_owned().unwrap_or_default()
-            )),
-            comment: None,
-            empty_layer: Some(true),
-        };
+        if add_history {
+            let mut img_history = cfg.history.to_owned().unwrap_or_default();
+            let change_history = History {
+                created: Some(chrono::Utc::now()),
+                author: None,
+                created_by: Some(format!(
+                    "/bin/sh -c #(nop) USER {}",
+                    user.to_owned().unwrap_or_default()
+                )),
+                comment: None,
+                empty_layer: Some(true),
+            };
 
-        img_history.insert(0, change_history);
-        cfg.history = Some(img_history);
+            img_history.insert(0, change_history);
+            cfg.history = Some(img_history);
+        }
 
         Ok(())
     }
@@ -338,6 +378,7 @@ impl OCIBuilder {
         &self,
         cfg: &mut ConfigFile,
         working_dir: &Option<String>,
+        add_history: bool,
     ) -> BuilderResult<()> {
         debug!("set container config working dir: {:?}", working_dir);
 
@@ -346,20 +387,22 @@ impl OCIBuilder {
 
         cfg.config = Some(cfg_config);
 
-        let mut img_history = cfg.history.to_owned().unwrap_or_default();
-        let change_history = History {
-            created: Some(chrono::Utc::now()),
-            author: None,
-            created_by: Some(format!(
-                "/bin/sh -c #(nop) WORKDIR {}",
-                working_dir.to_owned().unwrap_or_default()
-            )),
-            comment: None,
-            empty_layer: Some(true),
-        };
+        if add_history {
+            let mut img_history = cfg.history.to_owned().unwrap_or_default();
+            let change_history = History {
+                created: Some(chrono::Utc::now()),
+                author: None,
+                created_by: Some(format!(
+                    "/bin/sh -c #(nop) WORKDIR {}",
+                    working_dir.to_owned().unwrap_or_default()
+                )),
+                comment: None,
+                empty_layer: Some(true),
+            };
 
-        img_history.insert(0, change_history);
-        cfg.history = Some(img_history);
+            img_history.insert(0, change_history);
+            cfg.history = Some(img_history);
+        }
 
         Ok(())
     }
@@ -368,6 +411,7 @@ impl OCIBuilder {
         &self,
         cfg: &mut ConfigFile,
         stop_signal: &Option<String>,
+        add_history: bool,
     ) -> BuilderResult<()> {
         debug!("set container config stop signal: {:?}", stop_signal);
 
@@ -376,20 +420,22 @@ impl OCIBuilder {
 
         cfg.config = Some(cfg_config);
 
-        let mut img_history = cfg.history.to_owned().unwrap_or_default();
-        let change_history = History {
-            created: Some(chrono::Utc::now()),
-            author: None,
-            created_by: Some(format!(
-                "/bin/sh -c #(nop) STOPSIGNAL {}",
-                stop_signal.to_owned().unwrap_or_default()
-            )),
-            comment: None,
-            empty_layer: Some(true),
-        };
+        if add_history {
+            let mut img_history = cfg.history.to_owned().unwrap_or_default();
+            let change_history = History {
+                created: Some(chrono::Utc::now()),
+                author: None,
+                created_by: Some(format!(
+                    "/bin/sh -c #(nop) STOPSIGNAL {}",
+                    stop_signal.to_owned().unwrap_or_default()
+                )),
+                comment: None,
+                empty_layer: Some(true),
+            };
 
-        img_history.insert(0, change_history);
-        cfg.history = Some(img_history);
+            img_history.insert(0, change_history);
+            cfg.history = Some(img_history);
+        }
 
         Ok(())
     }
@@ -400,7 +446,6 @@ impl OCIBuilder {
         created_by: &Option<String>,
     ) -> BuilderResult<()> {
         debug!("set container config created by: {:?}", created_by);
-
         let mut img_history = cfg.history.to_owned().unwrap_or_default();
         let change_history = History {
             created: Some(chrono::Utc::now()),
