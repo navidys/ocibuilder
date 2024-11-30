@@ -19,6 +19,7 @@ impl OCIBuilder {
     ) -> BuilderResult<String> {
         self.lock()?;
         let mut cnt_name = name.unwrap_or_default();
+        let creation_time = Some(chrono::Utc::now());
 
         if !cnt_name.is_empty() {
             match self.container_store().container_exist(&cnt_name) {
@@ -90,7 +91,8 @@ impl OCIBuilder {
                 &img_layers,
             )?;
 
-            let img_config = self.image_store().get_config(&img_digest)?;
+            let mut img_config = self.image_store().get_config(&img_digest)?;
+            img_config.created = creation_time;
 
             self.container_store()
                 .write_builder_config(&cnt_id, &img_config)?;
@@ -119,9 +121,10 @@ impl OCIBuilder {
                 &Vec::new(),
             )?;
 
-            let mut scratch_cfg = ConfigFile::default();
+            let mut scratch_cfg = ConfigFile::default().clone();
+            scratch_cfg.created = creation_time;
             let change_history = History {
-                created: Some(chrono::Utc::now()),
+                created: creation_time,
                 author: None,
                 created_by: None,
                 comment: None,
