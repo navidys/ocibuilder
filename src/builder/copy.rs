@@ -11,7 +11,13 @@ use crate::{
 use super::oci::OCIBuilder;
 
 impl OCIBuilder {
-    pub fn copy(&self, cnt_name: &str, src: &str, dest: &str) -> BuilderResult<()> {
+    pub fn copy(
+        &self,
+        cnt_name: &str,
+        src: &str,
+        dest: &str,
+        add_history: &bool,
+    ) -> BuilderResult<()> {
         self.lock()?;
 
         // check if container exist
@@ -60,25 +66,27 @@ impl OCIBuilder {
         }
 
         // add history
-        let mut img_cfg = self.container_store().get_builder_config(cnt_id)?;
+        if add_history.to_owned() {
+            let mut img_cfg = self.container_store().get_builder_config(cnt_id)?;
 
-        let mut img_history = img_cfg.history.to_owned().unwrap_or_default();
-        let change_history = History {
-            created: Some(chrono::Utc::now()),
-            author: None,
-            created_by: Some(format!(
-                "/bin/sh -c #(nop) COPY {}:{}",
-                history_copy_type, copy_id_digest.encoded,
-            )),
-            comment: None,
-            empty_layer: Some(true),
-        };
+            let mut img_history = img_cfg.history.to_owned().unwrap_or_default();
+            let change_history = History {
+                created: Some(chrono::Utc::now()),
+                author: None,
+                created_by: Some(format!(
+                    "/bin/sh -c #(nop) COPY {}:{}",
+                    history_copy_type, copy_id_digest.encoded,
+                )),
+                comment: None,
+                empty_layer: Some(true),
+            };
 
-        img_history.insert(0, change_history);
-        img_cfg.history = Some(img_history);
+            img_history.insert(0, change_history);
+            img_cfg.history = Some(img_history);
 
-        self.container_store()
-            .write_builder_config(cnt_id, &img_cfg)?;
+            self.container_store()
+                .write_builder_config(cnt_id, &img_cfg)?;
+        }
 
         self.unlock()?;
 

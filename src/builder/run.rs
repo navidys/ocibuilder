@@ -25,6 +25,7 @@ impl OCIBuilder {
         cmd: &Vec<String>,
         rundir: &Option<OsString>,
         systemd_cgroup: &bool,
+        add_history: &bool,
     ) -> BuilderResult<()> {
         self.lock()?;
 
@@ -91,21 +92,23 @@ impl OCIBuilder {
 
         let mut img_cfg = self.container_store().get_builder_config(&cnt_id)?;
 
-        let mut img_history = img_cfg.history.to_owned().unwrap_or_default();
-        let mut change_history = History {
-            created: Some(chrono::Utc::now()),
-            author: None,
-            created_by: Some(cmd.join(" ")),
-            comment: None,
-            empty_layer: None,
-        };
+        if add_history.to_owned() {
+            let mut img_history = img_cfg.history.to_owned().unwrap_or_default();
+            let mut change_history = History {
+                created: Some(chrono::Utc::now()),
+                author: None,
+                created_by: Some(cmd.join(" ")),
+                comment: None,
+                empty_layer: None,
+            };
 
-        if is_empty_layer {
-            change_history.empty_layer = Some(is_empty_layer)
+            if is_empty_layer {
+                change_history.empty_layer = Some(is_empty_layer)
+            }
+
+            img_history.insert(0, change_history);
+            img_cfg.history = Some(img_history);
         }
-
-        img_history.insert(0, change_history);
-        img_cfg.history = Some(img_history);
 
         self.container_store()
             .write_builder_config(&cnt_id, &img_cfg)?;

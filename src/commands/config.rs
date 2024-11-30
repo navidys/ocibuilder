@@ -6,6 +6,10 @@ use crate::{builder, error::BuilderResult, utils};
 
 #[derive(Parser, Debug)]
 pub struct Config {
+    /// Add an entry for this operation to the image's history.
+    #[clap(long, required = false)]
+    pub add_history: bool,
+
     /// Set image author contact information
     #[clap(long, required = false)]
     pub author: Option<String>,
@@ -63,8 +67,10 @@ impl Config {
         env: Option<String>,
         label: Option<String>,
         port: Option<String>,
+        add_history: bool,
     ) -> Self {
         Self {
+            add_history,
             author,
             user,
             working_dir,
