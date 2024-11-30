@@ -96,8 +96,56 @@ impl ContainerStore {
         Ok(containers)
     }
 
-    pub fn write_containers(&self, cnt: Container) -> BuilderResult<()> {
-        debug!("write containers: {}", cnt.id);
+    pub fn add_rootfs_diff(
+        &self,
+        cnt_id: &digest::Digest,
+        layer_id: &digest::Digest,
+    ) -> BuilderResult<()> {
+        let containers = self.containers()?;
+        let mut updated_containers: Vec<Container> = Vec::new();
+
+        for mut cnt in containers {
+            if cnt.id == cnt_id.encoded {
+                cnt.rootfs_diff.insert(0, layer_id.to_string());
+            }
+
+            updated_containers.push(cnt)
+        }
+
+        self.write_containers(updated_containers)
+    }
+
+    pub fn write_containers(&self, cnts: Vec<Container>) -> BuilderResult<()> {
+        debug!("write containers");
+
+        let cnt_file_path = self.containers_path();
+        let cnt_file = match File::create(&cnt_file_path) {
+            Ok(f) => f,
+            Err(err) => {
+                return Err(BuilderError::ContainerStoreError(format!(
+                    "{:?}: {:?}",
+                    cnt_file_path,
+                    err.to_string(),
+                )));
+            }
+        };
+
+        match serde_json::to_writer(cnt_file, &cnts) {
+            Ok(_) => {}
+            Err(err) => {
+                return Err(BuilderError::ContainerStoreError(format!(
+                    "{:?}: {:?}",
+                    cnt_file_path,
+                    err.to_string(),
+                )));
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn write_container(&self, cnt: Container) -> BuilderResult<()> {
+        debug!("write container: {}", cnt.id);
 
         let mut containers = self.containers()?;
         containers.push(cnt);

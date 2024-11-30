@@ -61,10 +61,12 @@ impl OCIBuilder {
 
         let diff_path = self.layer_store().overlay_diff_path(&top_layer_digest);
 
-        let is_empty_layer = utils::is_empty_dir(&diff_path)?;
+        let is_empty_layer = utils::common::is_empty_dir(&diff_path)?;
 
-        let mut config = self.container_store().get_builder_config(&cnt_id)?;
-        config.created = Some(chrono::Utc::now());
+        let mut img_config = self.container_store().get_builder_config(&cnt_id)?;
+        let mut cnt_builder_config = img_config.clone();
+
+        img_config.created = Some(chrono::Utc::now());
 
         if cnt.image_name() != images::SCRATCH_IMAGE_NAME {
             let cnt_image_id = utils::digest::Digest::new(&format!("sha256:{}", cnt.image_id()))?;
@@ -104,7 +106,7 @@ impl OCIBuilder {
 
             // update layers.json
             let layer_gz_output = self.layer_store().blob_path(&layer_tar_gz_digest);
-            let layer_size = utils::file_size(&layer_gz_output)?;
+            let layer_size = utils::common::file_size(&layer_gz_output)?;
             let new_layer_oci_desc = manifest::OciDescriptor {
                 size: layer_size,
                 media_type: manifest::IMAGE_LAYER_GZIP_MEDIA_TYPE.to_string(),
@@ -115,12 +117,24 @@ impl OCIBuilder {
             self.layer_store().add_layer_desc(&new_layer_oci_desc)?;
             layer_oci_desc = Some(new_layer_oci_desc.clone());
 
-            config.rootfs.diff_ids.push(layer_tar_id.to_string());
+            img_config.rootfs.diff_ids.push(layer_tar_id.to_string());
+
+            cnt_builder_config
+                .rootfs
+                .diff_ids
+                .push(layer_tar_id.to_string());
+
+            self.container_store()
+                .write_builder_config(&cnt_id, &cnt_builder_config)?;
+
+            self.container_store()
+                .add_rootfs_diff(&cnt_id, &layer_tar_gz_digest)?;
         } else {
             debug!("empty top layer");
         }
 
-        match serde_json::to_string(&config) {
+        // write new image config
+        match serde_json::to_string(&img_config) {
             Ok(output) => {
                 self.image_store().write_config(&cnt_id, &output)?;
             }
@@ -129,7 +143,7 @@ impl OCIBuilder {
 
         // overlay-images 3 - calc image new ID and rename
         let tmp_image_cfg_path = self.image_store().config_path(&cnt_id);
-        let new_image_id = utils::compute_sha256_hash_of_file(&tmp_image_cfg_path)?;
+        let new_image_id = utils::common::compute_sha256_hash_of_file(&tmp_image_cfg_path)?;
         let new_image_id_digest = utils::digest::Digest::new(&new_image_id)?;
         println!("Copying config {:.12}", new_image_id_digest.encoded);
 
@@ -164,6 +178,10 @@ impl OCIBuilder {
             &image_config.created.unwrap_or_default(),
         )?;
 
+        // create empty diff directory of the toplayer
+        self.layer_store()
+            .empty_layer_overlay_dir(&top_layer_digest)?;
+
         // remove tmp content
         if layer_archive_path.is_file() {
             match fs::remove_file(&layer_archive_path) {
@@ -188,7 +206,7 @@ impl OCIBuilder {
         let mut image_annotations = None;
         let mut new_image_layers = Vec::<OciDescriptor>::new();
         let img_cfg = self.image_store().config_path(image_id);
-        let config_size = utils::file_size(&img_cfg)?;
+        let config_size = utils::common::file_size(&img_cfg)?;
 
         if cnt.image_name() != images::SCRATCH_IMAGE_NAME {
             let cnt_image_id = utils::digest::Digest::new(&format!("sha256:{}", cnt.image_id()))?;
@@ -312,7 +330,7 @@ impl OCIBuilder {
             Err(err) => return Err(BuilderError::IoError(dest.to_owned(), err)),
         }
 
-        let layer_tar_gz_id = utils::compute_sha256_hash_of_file(dest)?;
+        let layer_tar_gz_id = utils::common::compute_sha256_hash_of_file(dest)?;
         debug!("tar gz layer id: {}", layer_tar_gz_id);
 
         let layer_tar_gz_digest = digest::Digest::new(layer_tar_gz_id.as_str())?;
@@ -370,7 +388,7 @@ impl OCIBuilder {
             Err(err) => return Err(BuilderError::IoError(dest.to_owned(), err)),
         }
 
-        let layer_tar_id = utils::compute_sha256_hash_of_file(dest)?;
+        let layer_tar_id = utils::common::compute_sha256_hash_of_file(dest)?;
         debug!("tar layer id: {}", layer_tar_id);
 
         let layer_tar_digest = digest::Digest::new(layer_tar_id.as_str())?;

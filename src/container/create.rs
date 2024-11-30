@@ -22,7 +22,7 @@ impl ContainerStore {
     ) -> BuilderResult<digest::Digest> {
         debug!("container create");
 
-        let new_cnt_id = utils::new_digest_id()?;
+        let new_cnt_id = utils::common::new_digest_id()?;
         let created: String = chrono::Utc::now().to_rfc3339_opts(SecondsFormat::Nanos, true);
 
         let mut cnt_path = self.cstore_path().clone();
@@ -43,7 +43,7 @@ impl ContainerStore {
             name.to_string(),
         )?;
 
-        self.write_containers(cnt_config)?;
+        self.write_container(cnt_config)?;
 
         self.generate_runtime_spec(&new_cnt_id)?;
 

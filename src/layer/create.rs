@@ -37,4 +37,30 @@ impl LayerStore {
 
         Ok(())
     }
+
+    pub fn empty_layer_overlay_dir(&self, dg: &digest::Digest) -> BuilderResult<()> {
+        let mut ovpath = self.overlay_path().clone();
+        ovpath.push(&dg.encoded);
+
+        let overlays_subdir = [
+            &self.overlay_diff_path(dg),
+            &self.overlay_rootfs_path(dg),
+            &self.overlay_work_path(dg),
+            &self.overlay_tmp_path(dg),
+        ];
+
+        for dir_path in overlays_subdir {
+            match fs::remove_dir_all(dir_path) {
+                Ok(_) => {}
+                Err(err) => return Err(BuilderError::IoError(dir_path.to_owned(), err)),
+            }
+
+            match fs::create_dir(dir_path) {
+                Ok(_) => {}
+                Err(err) => return Err(BuilderError::IoError(dir_path.to_owned(), err)),
+            }
+        }
+
+        Ok(())
+    }
 }

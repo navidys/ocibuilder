@@ -1,6 +1,7 @@
 pub mod commit;
 pub mod config;
 pub mod containers;
+pub mod copy;
 pub mod from;
 pub mod images;
 pub mod inspect;

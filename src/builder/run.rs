@@ -87,7 +87,7 @@ impl OCIBuilder {
 
         // update history
         let diff_path = self.layer_store().overlay_diff_path(&cnt_top_layer_digest);
-        let is_empty_layer = utils::is_empty_dir(&diff_path)?;
+        let is_empty_layer = utils::common::is_empty_dir(&diff_path)?;
 
         let mut img_cfg = self.container_store().get_builder_config(&cnt_id)?;
 

@@ -1,5 +1,3 @@
-use std::{fs, io, path::PathBuf};
-
 use crate::{
     error::{BuilderError, BuilderResult},
     utils,
@@ -18,7 +16,7 @@ impl OCIBuilder {
             let layer_id = utils::digest::Digest::new(&layer.digest)?;
             let layer_id_path = self.layer_store().overlay_dir_path(&layer_id);
 
-            let layer_size = match dir_size(&layer_id_path) {
+            let layer_size = match utils::common::dir_size(&layer_id_path) {
                 Ok(s) => s,
                 Err(err) => return Err(BuilderError::AnyError(err.to_string())),
             };
@@ -32,19 +30,4 @@ impl OCIBuilder {
 
         Ok(layers_dir_size)
     }
-}
-
-fn dir_size(path: impl Into<PathBuf>) -> io::Result<u64> {
-    fn dir_size(mut dir: fs::ReadDir) -> io::Result<u64> {
-        dir.try_fold(0, |acc, file| {
-            let file = file?;
-            let size = match file.metadata()? {
-                data if data.is_dir() => dir_size(fs::read_dir(file.path())?)?,
-                data => data.len(),
-            };
-            Ok(acc + size)
-        })
-    }
-
-    dir_size(fs::read_dir(path.into())?)
 }
