@@ -38,7 +38,7 @@ make
 
 | Command    | Description |
 | ---------- | ----------- |
-|            |             |
+| reset      | Reset local storage.
 
 
 ## Run tests
